@@ -203,6 +203,9 @@ input:focus,textarea:focus,select:focus{border-color:var(--primary)}
       <div style="font-size:48px;margin-bottom:8px">⚔️</div>
       <h1 class="glow" style="font-size:22px;color:var(--primary)">ARCHITECT QUEST</h1>
       <p style="color:var(--muted);font-size:13px;margin-top:8px">Assessment de diagnóstico — 20 preguntas</p>
+      <div style="margin-top:16px">
+        <button class="btn btn-ghost btn-sm" onclick="showImportAndReload()" style="font-size:11px">📥 Ya tengo progreso — Importar JSON</button>
+      </div>
     </div>
     <div class="quiz-container">
       <div style="margin-bottom:20px">
@@ -1388,7 +1391,35 @@ function doImport(){
     save();
     document.querySelector('.modal-overlay').remove();
     renderDashboard();renderQuests();renderDomains();renderAchievements();drawAvatar();
-    setSyncStatus('✅ Datos importados correctamente');
+    const st=document.getElementById('sync-status');if(st)st.textContent='✅ Datos importados correctamente';
+  }catch(e){
+    if(errEl)errEl.textContent='Error: '+e.message;
+  }
+}
+function showImportAndReload(){
+  const overlay=document.createElement('div');overlay.className='modal-overlay';
+  overlay.innerHTML=`<div class="modal">
+    <h3 style="margin-bottom:12px">📥 Importar progreso</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Pegá el JSON exportado desde tu otro dispositivo:</p>
+    <textarea id="import-textarea" style="width:100%;min-height:150px;background:var(--bg);border:1px solid var(--bg4);border-radius:8px;padding:10px;color:var(--text);font-size:12px;font-family:inherit;resize:vertical" placeholder='{"quizDone":true,"xp":1200,...}'></textarea>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+      <button class="btn btn-primary btn-sm" onclick="doImportAndReload()">Importar</button>
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+    </div>
+    <div id="import-error" style="color:var(--danger);font-size:11px;margin-top:8px"></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+}
+function doImportAndReload(){
+  const textarea=document.getElementById('import-textarea');
+  const errEl=document.getElementById('import-error');
+  if(!textarea)return;
+  try{
+    const imported=JSON.parse(textarea.value.trim());
+    if(!imported.quizDone&&!imported.xp&&!imported.tasks)throw new Error('No parece ser un JSON de CCA Quest válido');
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(imported));
+    location.reload();
   }catch(e){
     if(errEl)errEl.textContent='Error: '+e.message;
   }
