@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚔️ Architect Quest — CCA Study Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0d1a;--bg2:#141428;--bg3:#1a1a35;--bg4:#222245;
+  --primary:#7c3aed;--accent:#06b6d4;--success:#10b981;--gold:#f59e0b;
+  --danger:#ef4444;--text:#e2e8f0;--muted:#64748b;--white:#fff;
+}
+body{font-family:'Courier New',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:inherit;background:var(--bg3);color:var(--text);border:1px solid var(--bg4);border-radius:6px;padding:8px 12px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--primary)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--primary);border-radius:3px}
+.glow{text-shadow:0 0 10px var(--primary),0 0 20px var(--primary)}
+.glow-gold{text-shadow:0 0 10px var(--gold),0 0 20px var(--gold)}
+#app{max-width:900px;margin:0 auto;padding:16px 16px 100px}
+.hidden{display:none!important}
+
+.nav{display:flex;gap:4px;background:var(--bg2);padding:4px;border-radius:12px;margin-bottom:20px;flex-wrap:wrap}
+.nav button{flex:1;padding:10px 8px;border-radius:8px;background:transparent;color:var(--muted);font-size:13px;transition:.2s}
+.nav button.active{background:var(--primary);color:var(--white)}
+.nav button:hover:not(.active){background:var(--bg3);color:var(--text)}
+
+.card{background:var(--bg2);border:1px solid var(--bg4);border-radius:12px;padding:20px;margin-bottom:16px}
+.card h3{font-size:16px;color:var(--accent)}
+
+.xp-bar-wrap{background:var(--bg);border-radius:10px;height:20px;overflow:hidden;position:relative}
+.xp-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:10px;transition:width .6s ease;position:relative}
+.xp-bar::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.15) 50%,transparent 100%);animation:shimmer 2s infinite}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.xp-label{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:var(--white);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+
+.prog-bar-wrap{background:var(--bg);border-radius:6px;height:10px;overflow:hidden}
+.prog-bar{height:100%;border-radius:6px;transition:width .4s ease}
+
+.btn{padding:10px 20px;border-radius:8px;font-weight:bold;transition:.2s;font-size:14px;display:inline-block}
+.btn-primary{background:var(--primary);color:var(--white)}
+.btn-primary:hover{background:#6d28d9;transform:translateY(-1px)}
+.btn-accent{background:var(--accent);color:var(--bg)}
+.btn-gold{background:var(--gold);color:var(--bg)}
+.btn-success{background:var(--success);color:var(--bg)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--bg4)}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;transition:.2s;cursor:pointer}
+.task-item:hover{background:var(--bg3)}
+.task-item.done{opacity:.6}
+.task-item.done .task-text{text-decoration:line-through;color:var(--muted)}
+.task-check{width:20px;height:20px;border:2px solid var(--primary);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s;margin-top:2px}
+.task-item.done .task-check{background:var(--success);border-color:var(--success)}
+.task-text{flex:1;font-size:13px}
+
+.xp-popup{position:fixed;pointer-events:none;font-size:20px;font-weight:bold;color:var(--gold);z-index:9999;animation:xpFloat 1.2s ease-out forwards}
+@keyframes xpFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(1.3)}}
+
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .3s}
+.modal{background:var(--bg2);border:2px solid var(--primary);border-radius:16px;padding:32px;max-width:550px;width:90%;text-align:center;animation:scaleIn .3s;max-height:90vh;overflow-y:auto}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.ach-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:12px;padding:16px;text-align:center;transition:.3s;overflow:hidden}
+.ach-card.unlocked{border-color:var(--gold)}
+.ach-card .ach-icon{font-size:32px;margin-bottom:8px;filter:grayscale(1) brightness(.5)}
+.ach-card.unlocked .ach-icon{filter:none}
+.ach-card.just-unlocked{animation:achieveGlow 1s ease}
+@keyframes achieveGlow{0%,100%{box-shadow:0 0 5px rgba(245,158,11,.2)}50%{box-shadow:0 0 25px rgba(245,158,11,.6);transform:scale(1.03)}}
+.ach-name{font-size:12px;font-weight:bold;margin-bottom:4px}
+.ach-desc{font-size:10px;color:var(--muted)}
+
+.domain-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:12px;padding:16px;margin-bottom:12px;transition:.2s}
+.domain-card:hover{border-color:var(--primary)}
+.domain-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.domain-icon{font-size:28px}
+.domain-info{flex:1}
+.domain-name{font-size:15px;font-weight:bold}
+.domain-weight{font-size:11px;color:var(--muted)}
+.domain-badge{padding:3px 8px;border-radius:12px;font-size:10px;font-weight:bold}
+.badge-strong{background:rgba(16,185,129,.15);color:var(--success)}
+.badge-focus{background:rgba(239,68,68,.15);color:var(--danger)}
+
+.week-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:.2s}
+.week-card:hover{border-color:var(--primary)}
+.week-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none}
+.week-num{background:var(--primary);color:var(--white);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;flex-shrink:0}
+.week-num.done{background:var(--success)}
+.week-title{flex:1}
+.week-title-text{font-size:14px;font-weight:bold}
+.week-subtitle{font-size:11px;color:var(--muted)}
+.week-progress{font-size:12px;color:var(--accent);font-weight:bold}
+.week-body{padding:0 16px 14px;display:none}
+.week-card.open .week-body{display:block}
+
+.challenge-box{background:var(--bg);border:2px solid var(--bg4);border-radius:12px;padding:16px;margin-top:12px}
+.challenge-box.passed{border-color:var(--success)}
+.challenge-box h4{color:var(--gold);margin-bottom:8px;font-size:14px}
+.challenge-type{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;margin-bottom:10px}
+.type-quiz{background:rgba(124,58,237,.2);color:var(--primary)}
+.type-practice{background:rgba(6,182,212,.2);color:var(--accent)}
+.cq-opt{padding:10px 14px;background:var(--bg3);border:2px solid var(--bg4);border-radius:8px;cursor:pointer;transition:.2s;font-size:13px;text-align:left;margin-bottom:6px;display:block;width:100%;font-family:inherit;color:var(--text)}
+.cq-opt:hover:not(.disabled){border-color:var(--primary)}
+.cq-opt.selected{border-color:var(--primary);background:rgba(124,58,237,.12)}
+.cq-opt.correct{border-color:var(--success);background:rgba(16,185,129,.12)}
+.cq-opt.wrong{border-color:var(--danger);background:rgba(239,68,68,.08)}
+.cq-opt.disabled{pointer-events:none;opacity:.7}
+.explanation{background:var(--bg3);border-left:3px solid var(--accent);padding:10px 14px;margin-top:10px;font-size:12px;line-height:1.6;border-radius:0 8px 8px 0}
+.source-box{background:var(--bg2);border-left:3px solid var(--gold);padding:8px 12px;margin-top:8px;font-size:11px;line-height:1.5;border-radius:0 6px 6px 0;color:var(--gold)}
+.source-box a{color:var(--accent);text-decoration:underline}
+.prompt-block{background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;padding:12px;margin:10px 0;font-size:12px;line-height:1.5;white-space:pre-wrap;position:relative;max-height:200px;overflow-y:auto}
+.copy-btn{position:absolute;top:6px;right:6px;padding:3px 8px;font-size:10px;background:var(--bg4);color:var(--accent);border-radius:4px;cursor:pointer;border:none;font-family:inherit}
+.copy-btn:hover{background:var(--primary);color:var(--white)}
+.practice-log{width:100%;min-height:80px;background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;padding:10px;color:var(--text);font-size:12px;margin:10px 0;resize:vertical;font-family:inherit}
+
+.quiz-container{max-width:650px;margin:0 auto}
+.quiz-q{font-size:15px;margin-bottom:16px;line-height:1.5}
+.quiz-domain-tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;background:var(--bg4);color:var(--accent);margin-bottom:12px}
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{padding:12px 16px;background:var(--bg3);border:2px solid var(--bg4);border-radius:8px;cursor:pointer;transition:.2s;font-size:13px;text-align:left;font-family:inherit;color:var(--text)}
+.quiz-opt:hover:not(.disabled){border-color:var(--primary)}
+.quiz-opt.correct{border-color:var(--success);background:rgba(16,185,129,.15)}
+.quiz-opt.wrong{border-color:var(--danger);background:rgba(239,68,68,.1)}
+.quiz-opt.disabled{pointer-events:none;opacity:.7}
+
+.char-sheet{background:var(--bg2);border:2px solid var(--primary);border-radius:16px;padding:24px;max-width:550px;margin:0 auto;font-size:14px}
+.char-divider{border:none;border-top:1px solid var(--bg4);margin:12px 0}
+.skill-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.skill-bar-bg{flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden}
+.skill-bar-fill{height:100%;border-radius:7px;transition:width .6s}
+.skill-pct{width:40px;text-align:right;font-size:12px;font-weight:bold}
+.skill-label-text{width:100px;font-size:12px}
+
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bg4)}
+.settings-row:last-child{border:none}
+
+.sync-panel{background:var(--bg);border:1px solid var(--bg4);border-radius:8px;padding:14px;margin-top:8px;display:none}
+.sync-panel.open{display:block}
+.sync-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.sync-divider{border:none;border-top:1px solid var(--bg4);margin:10px 0}
+.sync-status{font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
+.sync-btn{padding:8px 14px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;border:none;font-family:inherit;transition:.2s;display:inline-flex;align-items:center;gap:4px}
+.sync-btn:disabled{opacity:.5;cursor:not-allowed}
+.sync-btn-push{background:var(--primary);color:var(--white)}
+.sync-btn-push:hover:not(:disabled){background:#6d28d9}
+.sync-btn-pull{background:var(--accent);color:var(--bg)}
+.sync-btn-pull:hover:not(:disabled){filter:brightness(1.1)}
+.sync-btn-export{background:var(--bg3);color:var(--text);border:1px solid var(--bg4)}
+.sync-btn-export:hover{border-color:var(--primary)}
+.sync-btn-import{background:var(--bg3);color:var(--text);border:1px solid var(--bg4)}
+.sync-btn-import:hover{border-color:var(--primary)}
+.sync-spinner{display:inline-block;width:12px;height:12px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.step-indicator{display:flex;gap:4px;margin:10px 0}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--bg4)}
+.step-dot.active{background:var(--primary)}
+.step-dot.done{background:var(--success)}
+.step-dot.failed{background:var(--danger)}
+
+.quiz-result-banner{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:bold;margin:10px 0;text-align:center}
+.quiz-result-banner.pass{background:rgba(16,185,129,.15);color:var(--success);border:1px solid var(--success)}
+.quiz-result-banner.fail{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid var(--danger)}
+
+.avatar{width:64px;height:64px;image-rendering:pixelated;border-radius:8px;border:2px solid var(--primary)}
+.countdown{display:flex;gap:12px;justify-content:center;margin:12px 0}
+.countdown-unit{text-align:center}
+.countdown-num{font-size:24px;font-weight:bold;color:var(--accent)}
+.countdown-label{font-size:10px;color:var(--muted)}
+.minimap{display:flex;gap:6px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+.minimap-week{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;border:2px solid var(--bg4);transition:.2s;cursor:pointer}
+.minimap-week.complete{background:var(--success);border-color:var(--success);color:var(--bg)}
+.minimap-week.partial{border-color:var(--primary);color:var(--primary)}
+
+.notes-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.notes-tabs button{padding:6px 12px;border-radius:6px;background:var(--bg3);color:var(--muted);font-size:11px;transition:.2s}
+.notes-tabs button.active{background:var(--primary);color:var(--white)}
+.notes-area{width:100%;min-height:300px;background:var(--bg);border:1px solid var(--bg4);border-radius:8px;padding:12px;color:var(--text);font-size:13px;line-height:1.6;resize:vertical;font-family:inherit}
+.notes-meta{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)}
+
+#timer-float{position:fixed;bottom:16px;right:16px;background:var(--bg2);border:1px solid var(--bg4);border-radius:12px;padding:12px 16px;z-index:500;min-width:200px;transition:.3s}
+#timer-float.running{border-color:var(--success);box-shadow:0 0 15px rgba(16,185,129,.2)}
+.timer-display{font-size:28px;font-weight:bold;text-align:center;margin:8px 0}
+.timer-controls{display:flex;gap:6px;justify-content:center}
+
+@media(max-width:600px){
+  .nav button{font-size:11px;padding:8px 4px}
+  .ach-grid{grid-template-columns:repeat(2,1fr)}
+  .countdown-num{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen-quiz" class="hidden">
+    <div style="text-align:center;margin:40px 0 30px">
+      <div style="font-size:48px;margin-bottom:8px">⚔️</div>
+      <h1 class="glow" style="font-size:22px;color:var(--primary)">ARCHITECT QUEST</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:8px">Assessment de diagnóstico — 20 preguntas</p>
+    </div>
+    <div class="quiz-container">
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+          <span id="quiz-counter">Pregunta 1 / 20</span>
+          <span id="quiz-score-live">Score: 0</span>
+        </div>
+        <div class="prog-bar-wrap"><div id="quiz-prog" class="prog-bar" style="width:5%;background:var(--primary)"></div></div>
+      </div>
+      <div id="quiz-domain-tag" class="quiz-domain-tag"></div>
+      <div id="quiz-question" class="quiz-q"></div>
+      <div id="quiz-options" class="quiz-options"></div>
+      <div id="quiz-feedback" class="hidden" style="margin-top:12px"></div>
+      <div style="text-align:center;margin-top:20px">
+        <button id="quiz-next" class="btn btn-primary hidden" onclick="quizNext()">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-charsheet" class="hidden">
+    <div class="char-sheet" style="box-shadow:0 0 15px rgba(124,58,237,.3)" id="charsheet-content"></div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-gold" onclick="beginQuest()" style="font-size:16px;padding:14px 40px">⚔️ BEGIN QUEST</button>
+    </div>
+  </div>
+
+  <div id="screen-main" class="hidden">
+    <nav class="nav">
+      <button data-tab="dashboard" class="active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
+      <button data-tab="quests" onclick="switchTab('quests')">📜 Quests</button>
+      <button data-tab="domains" onclick="switchTab('domains')">🗡️ Domains</button>
+      <button data-tab="achievements" onclick="switchTab('achievements')">🏆 Achievements</button>
+      <button data-tab="notes" onclick="switchTab('notes')">📝 Notes</button>
+    </nav>
+    <div id="tab-dashboard" class="tab-content"></div>
+    <div id="tab-quests" class="tab-content hidden"></div>
+    <div id="tab-domains" class="tab-content hidden"></div>
+    <div id="tab-achievements" class="tab-content hidden"></div>
+    <div id="tab-notes" class="tab-content hidden">
+      <div class="card">
+        <div class="notes-tabs" id="notes-tabs"></div>
+        <textarea class="notes-area" id="notes-area" placeholder="Escribí tus notas acá..." oninput="saveNote()"></textarea>
+        <div class="notes-meta"><span id="notes-wc">0 palabras</span><span id="notes-ts"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="timer-float" class="hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:12px;font-weight:bold">🍅 Pomodoro</span>
+    <div style="display:flex;gap:4px">
+      <select id="timer-domain" style="font-size:10px;padding:2px 4px">
+        <option value="0">General</option><option value="1">Agentic</option><option value="2">MCP</option>
+        <option value="3">Claude Code</option><option value="4">Prompts</option><option value="5">Context</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="toggleTimerCollapse()">−</button>
+    </div>
+  </div>
+  <div id="timer-body">
+    <div class="timer-display" id="timer-display">25:00</div>
+    <div class="timer-controls">
+      <button class="btn btn-success btn-sm" id="timer-start-btn" onclick="toggleTimer()">▶ Start</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetTimer()">↺ Reset</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeTimer()">✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='cca_quest_data';
+const LEVELS=[
+  {xp:0,lvl:1,title:'Novice'},{xp:500,lvl:2,title:'Apprentice'},
+  {xp:1200,lvl:3,title:'Practitioner'},{xp:2000,lvl:4,title:'Engineer'},
+  {xp:3000,lvl:5,title:'Senior Engineer'},{xp:4200,lvl:6,title:'Solutions Architect'},
+  {xp:5500,lvl:7,title:'Principal Architect'},{xp:7000,lvl:8,title:'⚔️ Claude Certified Architect'}
+];
+const DOMAINS=[
+  {id:1,name:'Agentic Architecture',icon:'🗡️',weight:27},
+  {id:2,name:'MCP Integration',icon:'🔧',weight:19},
+  {id:3,name:'Claude Code',icon:'⚙️',weight:19},
+  {id:4,name:'Prompt Engineering',icon:'✨',weight:20},
+  {id:5,name:'Context Management',icon:'🧠',weight:15}
+];
+
+// ===== SHUFFLE UTILITY =====
+function shuffleWithMap(arr){
+  const indices=arr.map((_,i)=>i);
+  for(let i=indices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[indices[i],indices[j]]=[indices[j],indices[i]]}
+  return{shuffled:indices.map(i=>arr[i]),map:indices};
+}
+
+// ===== DIAGNOSTIC QUIZ — 20 QUESTIONS (all options similar detail) =====
+const QUIZ_QUESTIONS=[
+  {domain:1,q:'¿Qué patrón usarías para un sistema donde un agente central delega tareas especializadas a otros agentes?',
+    opts:['Pipeline secuencial, donde cada agente procesa y pasa el resultado al siguiente en cadena lineal','Hub-and-spoke, donde un orquestador central asigna y coordina tareas a agentes especializados','Mesh distribuido, donde cada agente se comunica directamente con todos los demás sin coordinador','Broadcast paralelo, donde el orquestador envía la misma tarea a todos los agentes simultáneamente'],
+    correct:1,source:'Anthropic Docs — Multi-agent orchestrator patterns: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+  {domain:1,q:'En un agent loop, ¿cuándo conviene que el agente use tool_use en lugar de generar una respuesta directa?',
+    opts:['Cuando el agente necesita acceder a información externa, ejecutar acciones o verificar datos en tiempo real','Cuando la respuesta requiere únicamente razonamiento lógico sin dependencias de datos externos','Cuando el usuario pide explícitamente una respuesta corta y directa sin procesamiento adicional','Cuando el context window está casi lleno y se necesita minimizar el número de tokens generados'],
+    correct:0,source:'Anthropic Docs — Tool use overview: docs.anthropic.com/en/docs/build-with-claude/tool-use/overview'},
+  {domain:1,q:'¿Cómo se preserva el estado entre múltiples subagentes durante una ejecución multi-agente?',
+    opts:['Mediante variables globales compartidas en memoria que todos los agentes leen y escriben simultáneamente','Almacenando el estado completo en una base de datos relacional que cada agente consulta por separado','Usando un event bus asíncrono donde cada agente publica y consume mensajes de estado en tiempo real','Pasando contexto explícito y estructurado en cada mensaje de handoff entre un agente y el siguiente'],
+    correct:3,source:'Anthropic Docs — Building effective agents, handoff patterns: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+  {domain:1,q:'¿Cuál es la causa más frecuente de que un agente entre en un loop infinito sin completar la tarea?',
+    opts:['Tener demasiados tools registrados, lo que genera confusión en la selección de herramientas por el modelo','Usar un modelo con context window muy grande, lo que permite acumular demasiadas iteraciones sin límite','Falta de condiciones de parada claras combinada con tool results ambiguos que no indican progreso','Configurar la temperatura del modelo por encima de 0.5, lo que causa respuestas inconsistentes en cada paso'],
+    correct:2,source:'Anthropic Docs — Building effective agents, loop control: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+  {domain:2,q:'¿Qué es un MCP server y qué tipo de recursos expone a los clientes que se conectan?',
+    opts:['Un servidor HTTP estándar que expone endpoints REST con autenticación Bearer token para cada recurso','Un proceso que expone tools, resources y prompt templates a través del protocolo JSON-RPC 2.0','Un plugin instalable en VS Code que agrega funcionalidades de autocompletado y linting al editor','Un proxy inverso que encapsula llamadas a la API de Claude y las redistribuye entre múltiples clientes'],
+    correct:1,source:'MCP Specification — Architecture overview: modelcontextprotocol.io/docs/concepts/architecture'},
+  {domain:2,q:'¿Cuál es la diferencia funcional entre un tool y un resource dentro del protocolo MCP?',
+    opts:['Un tool ejecuta acciones y puede tener side effects, mientras que un resource expone datos de solo lectura','Un tool se ejecuta de forma sincrónica y un resource se resuelve de forma asíncrona en todos los casos','Un resource tiene mejor performance porque se cachea automáticamente, a diferencia de los tools','Ambos cumplen la misma función, pero los tools se declaran con JSON Schema y los resources con protobuf'],
+    correct:0,source:'MCP Specification — Tools vs Resources: modelcontextprotocol.io/docs/concepts/tools'},
+  {domain:2,q:'¿Cómo se autentican los MCP servers cuando se despliegan en un entorno de producción?',
+    opts:['No requieren autenticación porque operan únicamente en localhost a través de conexiones stdio locales','Utilizan exclusivamente API keys de Anthropic que se validan contra el servicio central de Claude','Implementan OAuth 2.0 o tokens de acceso configurados en la capa de transporte HTTP del servidor','Usan un archivo de contraseña plano definido en el config.json que se verifica en cada request entrante'],
+    correct:2,source:'MCP Specification — Authentication and authorization: modelcontextprotocol.io/docs/concepts/transports'},
+  {domain:2,q:'¿En qué escenario conviene usar MCP en lugar de llamar directamente a una API externa?',
+    opts:['Cuando necesitás abstraer la integración para reutilizarla desde múltiples clientes y agentes diferentes','Siempre conviene MCP porque es más rápido que hacer llamadas HTTP directas a servicios externos','Únicamente cuando la API externa es una base de datos, ya que MCP fue diseñado solo para datos tabulares','Nunca conviene porque MCP fue reemplazado por el SDK oficial de Anthropic como método de integración'],
+    correct:0,source:'MCP Specification — When to use MCP: modelcontextprotocol.io/docs/concepts/architecture'},
+  {domain:3,q:'¿Cuál es el propósito de un archivo CLAUDE.md ubicado en la raíz del repositorio de un proyecto?',
+    opts:['Genera automáticamente la documentación README del proyecto basándose en la estructura del código fuente','Provee instrucciones persistentes y contexto de proyecto que Claude Code carga en cada conversación','Configura los parámetros de deployment de la aplicación en la plataforma de hosting correspondiente','Define prompt templates reutilizables que se pueden invocar como slash commands desde la terminal'],
+    correct:1,source:'Claude Code Docs — CLAUDE.md memory files: docs.anthropic.com/en/docs/claude-code/memory'},
+  {domain:3,q:'¿Cuál es la diferencia entre un hook y un slash command en Claude Code?',
+    opts:['Un hook se ejecuta automáticamente en respuesta a eventos del sistema como tool calls o notificaciones','Un slash command se ejecuta automáticamente y un hook se invoca manualmente escribiendo su nombre','Un hook tiene mayor velocidad de ejecución porque se compila previamente como un binary nativo','Ambos funcionan igual, pero los hooks se definen en YAML y los slash commands en archivos markdown'],
+    correct:0,source:'Claude Code Docs — Hooks: docs.anthropic.com/en/docs/claude-code/hooks'},
+  {domain:3,q:'¿Cómo se integra Claude Code en un pipeline de CI/CD para ejecución sin interacción humana?',
+    opts:['Se ejecuta usando el flag claude --print para one-shot o --dangerously-skip-permissions para modo headless','No es posible integrarlo porque Claude Code requiere obligatoriamente una terminal TTY interactiva','Se requiere configurar un MCP server dedicado para CI que actúe como proxy de las peticiones del pipeline','Se usa exclusivamente a través del marketplace de GitHub Actions con la acción oficial de Anthropic'],
+    correct:0,source:'Claude Code Docs — CI/CD integration: docs.anthropic.com/en/docs/claude-code/cli-usage'},
+  {domain:3,q:'¿Qué es una "skill" en Claude Code y de qué forma se invoca durante una sesión?',
+    opts:['Un modelo fine-tuned entrenado específicamente para un dominio que se selecciona con un flag de CLI','Un archivo de configuración de temperatura y sampling que se aplica globalmente a todas las conversaciones','Un prompt template reutilizable guardado en ~/.claude/skills/ que se invoca escribiendo /nombre-de-la-skill','Un plugin binario externo que se instala con npm y se registra en el archivo de configuración global'],
+    correct:2,source:'Claude Code Docs — Custom slash commands: docs.anthropic.com/en/docs/claude-code/slash-commands'},
+  {domain:4,q:'¿Qué técnica es más efectiva para reducir alucinaciones cuando se necesitan outputs estructurados?',
+    opts:['Aumentar la temperatura del modelo a valores altos para generar mayor diversidad en las respuestas posibles','Usar prompting few-shot sin ningún schema definido, confiando en que los ejemplos basten como guía','Proveer un JSON schema explícito junto con ejemplos concretos e instrucciones de no inventar campos faltantes','Enviar el system prompt vacío para que el modelo opere sin restricciones y genere respuestas más naturales'],
+    correct:2,source:'Anthropic Docs — Structured outputs with tool use: docs.anthropic.com/en/docs/build-with-claude/tool-use/overview'},
+  {domain:4,q:'¿En qué situaciones conviene usar few-shot prompting y en cuáles zero-shot prompting?',
+    opts:['Few-shot cuando el formato o estilo del output es crítico y no obvio, zero-shot para tareas directas y claras','Siempre conviene few-shot porque agregar ejemplos mejora los resultados en absolutamente todas las tareas','Zero-shot es siempre superior porque los ejemplos consumen tokens sin aportar valor al razonamiento del modelo','Few-shot se reserva exclusivamente para tareas de generación de código, zero-shot para todo lo demás'],
+    correct:0,source:'Anthropic Docs — Prompt engineering, few-shot examples: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview'},
+  {domain:4,q:'¿Cuál es la estrategia correcta para implementar un retry loop cuando el schema JSON falla?',
+    opts:['Abandonar el request inmediatamente y devolver un error al usuario sin reintentar la generación','Parsear el error específico de validación, incluirlo como feedback en el siguiente prompt y limitar los reintentos','Cambiar automáticamente a un modelo más grande en cada retry asumiendo que el fallo es por capacidad','Eliminar el schema de validación y aceptar el JSON tal cual lo genera el modelo sin restricciones'],
+    correct:1,source:'Anthropic Docs — Structured outputs, validation and retries: docs.anthropic.com/en/docs/build-with-claude/tool-use/overview'},
+  {domain:4,q:'¿Qué es chain-of-thought prompting y en qué situaciones NO conviene utilizarlo?',
+    opts:['Es una técnica de razonamiento paso a paso, no conviene cuando necesitás latencia baja en tareas simples','Es un método de fine-tuning de modelos que solo funciona con la familia GPT y no aplica para Claude','Siempre conviene usarlo porque mejora la calidad de todas las respuestas sin ningún costo adicional','Es una técnica exclusiva para tareas de código que no tiene aplicación en procesamiento de lenguaje natural'],
+    correct:0,source:'Anthropic Docs — Chain of thought prompting: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought'},
+  {domain:5,q:'¿Qué estrategia se recomienda cuando el input supera el límite del context window del modelo?',
+    opts:['Truncar automáticamente el final del texto hasta que entre en el context window sin procesar lo descartado','Summarización jerárquica con chunking y overlap, priorizando la información más relevante para la tarea','Usar siempre un modelo con mayor context window sin importar el costo o la latencia adicional que implique','Ignorar el contenido excedente y procesar únicamente lo que entra en el context window sin notificar al usuario'],
+    correct:1,source:'Anthropic Docs — Long context processing: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips'},
+  {domain:5,q:'¿Cómo se implementa un handoff entre agentes que preserve el estado relevante de la conversación?',
+    opts:['No es posible preservar estado entre agentes porque cada invocación del modelo es completamente stateless','Pasando un summary estructurado con el contexto relevante, la tarea específica y las restricciones al siguiente agente','Compartiendo el token de sesión HTTP entre los agentes para que accedan al mismo historial de conversación','Almacenando todo en una base de datos relacional normalizada que cada agente consulta con queries SQL específicos'],
+    correct:1,source:'Anthropic Docs — Building effective agents, handoff patterns: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+  {domain:5,q:'¿Qué es "confidence calibration" aplicado al contexto de agentes construidos con Claude?',
+    opts:['Un parámetro numérico de la API que se configura junto con temperature para ajustar la aleatoriedad del muestreo','Técnicas para que el modelo exprese su nivel de certeza y admita limitaciones cuando no tiene información suficiente','Un proceso de fine-tuning supervisado donde se entrena al modelo con datos etiquetados con niveles de confianza','Un ajuste exclusivo de la temperatura del modelo que se aplica automáticamente según la complejidad del prompt'],
+    correct:1,source:'Anthropic Docs — Building effective agents, confidence and error handling: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+  {domain:5,q:'¿Cuál es la diferencia funcional entre un system turn y un human turn dentro del context window?',
+    opts:['No hay diferencia funcional, ambos se procesan exactamente igual dentro del context window del modelo','System define comportamiento e instrucciones persistentes, human contiene los mensajes del usuario en la conversación','System ocupa menos espacio en el context window porque se comprime automáticamente con un encoding especial','Human turn siempre tiene mayor prioridad de atención que system turn independientemente de su contenido'],
+    correct:1,source:'Anthropic Docs — Messages API, system parameter: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts'},
+];
+
+// ===== WEEKLY CHALLENGES =====
+const WEEKS=[
+  {id:1,title:'Fundamentos I',subtitle:'Claude 101 + API Basics',domains:[4,5],tasks:[
+    {id:'w1-t1',text:'Completar curso Claude 101 + AI Fluency',domain:0,link:'https://anthropic.skilljar.com/claude-101',linkLabel:'Claude 101'},
+    {id:'w1-t2',text:'Completar "Building with the Claude API" (8.1 hrs)',domain:0,link:'https://anthropic.skilljar.com/building-with-the-claude-api',linkLabel:'Curso API'},
+    {id:'w1-t3',text:'Hacer llamadas básicas a la API y probar system prompts',domain:4,link:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts',linkLabel:'System Prompts Docs'}
+  ],challenge:{
+    title:'🧪 Quest Challenge: API Foundations',
+    steps:[
+      {type:'quiz',q:'¿Cuál es el rol del parámetro "system" en una llamada a la API de Claude?',
+        opts:['Configura la temperatura y los parámetros de sampling que el modelo usa para generar cada respuesta','Establece instrucciones persistentes que definen el comportamiento y las restricciones del modelo','Determina el límite máximo de tokens que el modelo puede generar en una única respuesta','Selecciona cuál de los modelos disponibles de Anthropic se va a utilizar para procesar la petición'],
+        correct:1,
+        explanation:'El system prompt define comportamiento, personalidad y restricciones del modelo. Persiste durante toda la conversación y tiene prioridad en la atención del modelo.',
+        source:'Anthropic Docs — System prompts: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts'},
+      {type:'quiz',q:'¿Qué sucede si enviás un mensaje con role "assistant" pre-filled en la API?',
+        opts:['Devuelve un error HTTP 400 porque el role assistant solo puede ser generado internamente por el modelo','Se usa como system prompt alternativo que se aplica únicamente a la primera respuesta de la conversación','Se descarta silenciosamente durante el procesamiento y no tiene ningún efecto observable en la salida','Claude continúa generando texto desde ese prefill, lo cual es útil para forzar formato de respuesta'],
+        correct:3,
+        explanation:'El assistant prefill permite forzar cómo arranca la respuesta (ej: {"result":) y Claude completa desde ahí. Técnica clave para JSON, XML u otros formatos.',
+        source:'Anthropic Docs — Prefilling Claude\'s response: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/prefill-claudes-response'},
+      {type:'practice',title:'Actividad práctica: Tu primera llamada a la API',
+        prompt:`Abrí Claude Code o tu terminal y ejecutá este ejercicio:
+
+1. Hacé una llamada a la API de Claude con un system prompt que diga: "Sos un experto en arquitectura de software. Respondé siempre en español y en formato JSON."
+
+2. Enviá el mensaje: "¿Cuáles son los 3 principios SOLID más importantes para microservicios?"
+
+3. Usá assistant prefill con: {"principios": [
+
+Copiá acá abajo:
+- El JSON que te devolvió Claude
+- Si el prefill funcionó correctamente
+- Qué modelo usaste`,minWords:15}
+    ]
+  }},
+  {id:2,title:'Fundamentos II',subtitle:'Structured Outputs + Docs',domains:[4,5],tasks:[
+    {id:'w2-t1',text:'Practicar structured outputs con JSON schemas',domain:4,link:'https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview',linkLabel:'Tool Use & Schemas'},
+    {id:'w2-t2',text:'Leer documentación de Anthropic: Models + Messages API',domain:5,link:'https://docs.anthropic.com/en/docs/about-claude/models',linkLabel:'Models Docs'},
+  ],challenge:{
+    title:'🧪 Quest Challenge: Structured Outputs',
+    steps:[
+      {type:'quiz',q:'¿Cuál es la forma más confiable de obtener JSON válido y estructurado de Claude?',
+        opts:['Incluir "respondé en JSON" como instrucción en el prompt y confiar en que el modelo cumplirá el formato','Usar tool_use con un input_schema definido que obligue al modelo a generar parámetros validados','Configurar la temperatura en 0 para que el modelo sea determinístico y siempre genere el mismo formato','Parsear la respuesta en texto libre con expresiones regulares y reconstruir el JSON manualmente'],
+        correct:1,
+        explanation:'tool_use con input_schema fuerza a Claude a generar JSON que cumple el schema. El modelo está obligado a generar parámetros válidos para el tool.',
+        source:'Anthropic Docs — Structured outputs with tool use: docs.anthropic.com/en/docs/build-with-claude/tool-use/overview'},
+      {type:'quiz',q:'¿Qué diferencia funcional hay entre los parámetros max_tokens y stop_sequences?',
+        opts:['Cumplen la misma función de limitar la longitud de la respuesta pero con diferente sintaxis de configuración','max_tokens establece un límite duro de tokens de salida, stop_sequences corta al detectar un patrón específico','max_tokens se aplica al conteo de tokens de entrada, stop_sequences se aplica exclusivamente a la salida','stop_sequences solo tiene efecto cuando se usa streaming, no funciona en llamadas sincrónicas a la API'],
+        correct:1,
+        explanation:'max_tokens pone un límite duro de tokens de salida. stop_sequences define strings que cortan la generación. Se usan juntos: max_tokens como safety net y stop_sequences para control preciso.',
+        source:'Anthropic Docs — Messages API parameters: docs.anthropic.com/en/docs/api/messages'},
+      {type:'practice',title:'Actividad práctica: Schema Validation',
+        prompt:`Ejercicio con Claude:
+
+1. Definí un JSON schema para un objeto "ModelPricing" con estos campos:
+   - model_name (string, required)
+   - provider (enum: "anthropic", "openai", "google")
+   - input_price_per_1k (number)
+   - output_price_per_1k (number)
+   - context_window (integer)
+   - supports_vision (boolean)
+
+2. Usá tool_use para que Claude te devuelva datos de 3 modelos reales siguiendo ese schema.
+
+3. Intentá provocar un error: pedí un provider que no esté en el enum. ¿Qué pasa?
+
+Copiá:
+- El schema que definiste
+- La respuesta de Claude
+- Qué pasó con el provider inválido`,minWords:20}
+    ]
+  }},
+  {id:3,title:'Agentic Architecture I',subtitle:'Multi-Agent Patterns',domains:[1],tasks:[
+    {id:'w3-t1',text:'Estudiar patrones multi-agente: hub-and-spoke, pipeline, paralelo',domain:1,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems',linkLabel:'Agentic Systems'},
+    {id:'w3-t2',text:'Estudiar task decomposition techniques',domain:1,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems#task-decomposition',linkLabel:'Task Decomposition'},
+    {id:'w3-t3',text:'Estudiar diseño de agent loops y manejo de fallos',domain:1,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems#agentic-loop',linkLabel:'Agent Loops'},
+  ],challenge:{
+    title:'🧪 Quest Challenge: Agent Patterns',
+    steps:[
+      {type:'quiz',q:'Tenés un sistema que debe: (1) buscar papers, (2) extraer datos, (3) generar un reporte. ¿Qué patrón es más apropiado?',
+        opts:['Hub-and-spoke con un orquestador que delega las 3 tareas a agentes independientes en paralelo','Pipeline secuencial donde cada agente procesa y pasa su output como input al siguiente agente','Ejecución paralela donde los 3 agentes arrancan simultáneamente y se sincronizan al final del proceso','Mesh distribuido donde cada agente puede comunicarse directamente con cualquier otro sin coordinador'],
+        correct:1,
+        explanation:'Pipeline es ideal cuando hay dependencia secuencial: el extractor necesita los papers del buscador, y el reportero necesita los datos del extractor.',
+        source:'Anthropic Docs — Multi-agent patterns, pipelines: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+      {type:'quiz',q:'¿Cuál es la mejor estrategia para prevenir que un agente entre en un loop infinito?',
+        opts:['Configurar la temperatura del modelo en exactamente 0 para garantizar respuestas determinísticas y predecibles','Implementar max_iterations como límite duro junto con exit conditions explícitas y un timeout global','Restringir los tools disponibles a un máximo de 3 para reducir la complejidad de decisión del modelo','Reducir el context window del modelo para forzar que complete la tarea antes de quedarse sin espacio'],
+        correct:1,
+        explanation:'Defensa en profundidad: (1) max_iterations como hard limit, (2) condiciones de salida claras, (3) timeout global. Temperatura y cantidad de tools no previenen loops.',
+        source:'Anthropic Docs — Building effective agents, loop control: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+      {type:'practice',title:'Actividad práctica: Diseñá un sistema multi-agente',
+        prompt:`Usando Claude Code o Claude, hacé este ejercicio:
+
+Escenario: Querés un sistema que revise PRs automáticamente. Debe:
+- Leer el diff del PR
+- Analizar seguridad (vulnerabilidades, secrets expuestos)
+- Analizar calidad de código (naming, complejidad, tests)
+- Generar un review unificado con score
+
+Pedile a Claude:
+1. "Diseñá la arquitectura multi-agente para este sistema."
+2. "¿Qué pasa si el agente de seguridad encuentra un secret expuesto?"
+3. "Escribí el pseudocódigo del orchestrator loop."
+
+Copiá:
+- El diagrama/arquitectura que propuso
+- La estrategia de manejo de errores
+- Si elegiste modificar algo y por qué`,minWords:30}
+    ]
+  }},
+  {id:4,title:'Agentic Architecture II',subtitle:'Handoffs + Practice',domains:[1],tasks:[
+    {id:'w4-t1',text:'Estudiar handoff patterns entre agentes',domain:1,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems#handoffs',linkLabel:'Handoff Patterns'},
+    {id:'w4-t2',text:'Diseñar sistema multi-agente en papel (Research + Code + Reviewer)',domain:1,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems',linkLabel:'Multi-Agent Design'},
+    {id:'w4-t3',text:'Practicar escenarios del examen: Multi-Agent Research scenario',domain:1,link:'https://claudecertifications.com',linkLabel:'CCA Practice'},
+  ],challenge:{
+    title:'🧪 Quest Challenge: Agent Handoffs',
+    steps:[
+      {type:'quiz',q:'Al hacer handoff entre agentes, ¿qué información es ESENCIAL incluir en la transferencia?',
+        opts:['El conversation history completo de principio a fin para que el siguiente agente tenga todo el contexto','Un summary estructurado del contexto relevante junto con la tarea específica y las constraints aplicables','Únicamente el último mensaje del usuario, ya que el resto del contexto se puede regenerar si es necesario','El system prompt del agente anterior para que el siguiente agente pueda replicar exactamente su comportamiento'],
+        correct:1,
+        explanation:'Lo ideal es un summary estructurado: qué se hizo, qué se encontró, cuál es la tarea del siguiente agente, y qué restricciones aplican. Pasar todo es costoso; pasar poco pierde contexto.',
+        source:'Anthropic Docs — Building effective agents, handoff patterns: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+      {type:'quiz',q:'Un agente falla después de 3 retries al intentar completar su tarea. ¿Cuál es el mejor fallback?',
+        opts:['Reiniciar la ejecución completa desde cero utilizando un modelo diferente más grande y más capaz','Aplicar graceful degradation: devolver el resultado parcial obtenido junto con un indicador de confianza','Capturar y silenciar el error para que los agentes siguientes continúen el flujo sin interrupción','Escalar automáticamente a un operador humano sin importar el tipo de error ni la criticidad de la tarea'],
+        correct:1,
+        explanation:'Graceful degradation mantiene el flujo: "pude hacer X e Y, pero Z falló. Confianza: 60%". El siguiente agente o usuario decide qué hacer.',
+        source:'Anthropic Docs — Building effective agents, error handling: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+      {type:'practice',title:'Actividad práctica: Exam Scenario - Multi-Agent Research',
+        prompt:`Simulá este escenario de examen con Claude:
+
+SCENARIO: Tu empresa necesita un sistema que, dado un topic:
+1. Busque papers relevantes (Arxiv, Scholar)
+2. Extraiga key findings de cada paper
+3. Identifique contradicciones entre papers
+4. Genere un research brief ejecutivo
+
+Respondé como si fuera el examen CCA:
+A) ¿Qué patrón multi-agente usarías y por qué?
+B) ¿Cómo manejas un paper PDF de 100 páginas que excede el context?
+C) El agente de contradicciones necesita ver TODOS los findings. ¿Cómo?
+D) ¿Cómo testeás end-to-end?
+
+Copiá tus respuestas y la retroalimentación de Claude.`,minWords:40}
+    ]
+  }},
+  {id:5,title:'MCP + Claude Code I',subtitle:'MCP Foundations',domains:[2,3],tasks:[
+    {id:'w5-t1',text:'Completar curso "Introduction to Model Context Protocol"',domain:2,link:'https://anthropic.skilljar.com/intro-to-model-context-protocol',linkLabel:'MCP Course'},
+    {id:'w5-t2',text:'Completar "Claude Code developer training"',domain:3,link:'https://anthropic.skilljar.com/claude-code-developer-training',linkLabel:'CC Training'},
+    {id:'w5-t3',text:'Estudiar CLAUDE.md hierarchies y configuración',domain:3,link:'https://docs.anthropic.com/en/docs/claude-code/memory',linkLabel:'CLAUDE.md Docs'},
+    {id:'w5-t4',text:'Configurar un MCP server de práctica',domain:2,link:'https://modelcontextprotocol.io/quickstart/server',linkLabel:'MCP Quickstart'},
+  ],challenge:{
+    title:'🧪 Quest Challenge: MCP Deep Dive',
+    steps:[
+      {type:'quiz',q:'¿En qué orden busca y aplica Claude Code los archivos CLAUDE.md de un proyecto?',
+        opts:['Carga únicamente el archivo CLAUDE.md ubicado en la raíz del repositorio e ignora todos los demás','Aplica merge jerárquico: ~/.claude/CLAUDE.md → raíz del repo → subdirectorios, acumulando instrucciones','Carga todos los archivos CLAUDE.md encontrados al mismo tiempo sin ningún orden de prioridad específico','Busca únicamente el CLAUDE.md más cercano al archivo que se está editando e ignora los demás niveles'],
+        correct:1,
+        explanation:'Claude Code hace merge jerárquico: global (~/.claude/), luego raíz del repo, luego subdirectorios. Cada nivel agrega o sobreescribe instrucciones. Similar a CSS cascade.',
+        source:'Claude Code Docs — CLAUDE.md hierarchy: docs.anthropic.com/en/docs/claude-code/memory'},
+      {type:'quiz',q:'¿Qué protocolo de transporte utiliza MCP para la comunicación entre client y server?',
+        opts:['REST HTTP estándar con endpoints versionados y autenticación mediante headers de API key personalizados','JSON-RPC 2.0 sobre stdio para servidores locales o HTTP con Server-Sent Events para servidores remotos','gRPC con serialización protobuf para maximizar el rendimiento en comunicaciones de alta frecuencia','WebSocket bidireccional puro con mensajes binarios codificados en formato MessagePack para baja latencia'],
+        correct:1,
+        explanation:'MCP usa JSON-RPC 2.0. Transporte local: stdio (stdin/stdout). Transporte remoto: HTTP + SSE para streaming. Simple y portable.',
+        source:'MCP Specification — Transport layer: modelcontextprotocol.io/docs/concepts/transports'},
+      {type:'practice',title:'Actividad práctica: Creá un MCP server básico',
+        prompt:`Ejercicio hands-on con Claude Code:
+
+1. Pedile a Claude Code: "Creá un MCP server en Node.js que exponga:
+   - Un tool 'get_weather' que reciba una ciudad y devuelva datos mock
+   - Un resource 'config://settings' que devuelva la configuración actual
+   - Un prompt template 'analyze' que genere un prompt para análisis de datos"
+
+2. Configurá el server en tu .mcp.json
+
+3. Probá que funciona invocando el tool desde Claude Code
+
+Copiá:
+- El código del server
+- La configuración que usaste
+- El resultado de invocar el tool
+- ¿Qué diferencia notaste entre tool, resource y prompt?`,minWords:25}
+    ]
+  }},
+  {id:6,title:'MCP + Claude Code II',subtitle:'Skills, Hooks & CI/CD',domains:[2,3],tasks:[
+    {id:'w6-t1',text:'Estudiar custom slash commands y skills',domain:3,link:'https://docs.anthropic.com/en/docs/claude-code/slash-commands',linkLabel:'Slash Commands'},
+    {id:'w6-t2',text:'Estudiar hooks y CI/CD integration',domain:3,link:'https://docs.anthropic.com/en/docs/claude-code/hooks',linkLabel:'Hooks Docs'},
+    {id:'w6-t3',text:'Crear custom skills y commands',domain:3,link:'https://docs.anthropic.com/en/docs/claude-code/slash-commands#custom-slash-commands',linkLabel:'Custom Skills'},
+    {id:'w6-t4',text:'Practicar escenario: Claude Code for CI/CD',domain:3,link:'https://docs.anthropic.com/en/docs/claude-code/cli-usage',linkLabel:'CLI & CI/CD'},
+  ],challenge:{
+    title:'🧪 Quest Challenge: Claude Code Mastery',
+    steps:[
+      {type:'quiz',q:'¿Qué es un "hook" en Claude Code y en qué momento se ejecuta dentro del flujo?',
+        opts:['Un prompt template reutilizable que se invoca manualmente escribiendo su nombre como slash command','Un shell command que se ejecuta automáticamente antes o después de eventos como tool calls o notifications','Un middleware que intercepta las llamadas a la API de Claude para agregar headers o modificar parámetros','Un tipo especial de MCP server que se conecta automáticamente cuando Claude Code detecta ciertos archivos'],
+        correct:1,
+        explanation:'Los hooks son comandos shell en settings que se ejecutan en eventos: PreToolUse, PostToolUse, Notification, etc. Para logging, validación, o bloquear operaciones peligrosas.',
+        source:'Claude Code Docs — Hooks: docs.anthropic.com/en/docs/claude-code/hooks'},
+      {type:'quiz',q:'¿Cómo se ejecuta Claude Code en un pipeline CI/CD sin terminal interactiva disponible?',
+        opts:['No es posible ejecutarlo porque Claude Code requiere obligatoriamente un TTY interactivo para funcionar','Se usa claude --print para ejecución one-shot o --dangerously-skip-permissions para modo headless completo','Se invoca exclusivamente a través de la API HTTP de Anthropic sin usar la CLI de Claude Code en absoluto','Se necesita configurar un MCP server especial para CI que emule una terminal interactiva en el pipeline'],
+        correct:1,
+        explanation:'claude --print ejecuta un prompt y retorna la respuesta sin interacción. --dangerously-skip-permissions permite ejecución headless con tools. Ideal para code review automático.',
+        source:'Claude Code Docs — CLI usage, non-interactive mode: docs.anthropic.com/en/docs/claude-code/cli-usage'},
+      {type:'practice',title:'Actividad práctica: Skill + Hook',
+        prompt:`Ejercicio con Claude Code:
+
+PARTE 1 — Creá una skill:
+1. Creá una skill en ~/.claude/skills/exam-prep/ con un SKILL.md que:
+   - Genere preguntas de práctica para el CCA
+   - Acepte un dominio como parámetro
+   - Devuelva 3 preguntas con respuestas
+2. Probala invocándola desde Claude Code
+
+PARTE 2 — Creá un hook:
+1. Configurá un hook PostToolUse que logee a un archivo cada vez que Claude Code usa "Edit"
+2. El log debe incluir: timestamp, archivo editado, y un hash del cambio
+
+Copiá:
+- El SKILL.md que creaste
+- La config del hook (JSON)
+- Un ejemplo del log generado`,minWords:25}
+    ]
+  }},
+  {id:7,title:'Prompt Engineering',subtitle:'Advanced Techniques',domains:[4],tasks:[
+    {id:'w7-t1',text:'Estudiar técnicas de few-shot prompting',domain:4,link:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview',linkLabel:'Prompt Engineering'},
+    {id:'w7-t2',text:'Estudiar diseño de JSON schemas para structured outputs',domain:4,link:'https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview',linkLabel:'Structured Outputs'},
+    {id:'w7-t3',text:'Estudiar validation retry loops',domain:4,link:'https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview#handling-errors',linkLabel:'Error Handling'},
+    {id:'w7-t4',text:'Practicar prompts con error recovery',domain:4,link:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought',linkLabel:'Chain of Thought'},
+    {id:'w7-t5',text:'Practicar escenario: Structured Data Extraction',domain:4,link:'https://claudecertifications.com',linkLabel:'CCA Practice'},
+  ],challenge:{
+    title:'🧪 Quest Challenge: Prompt Mastery',
+    steps:[
+      {type:'quiz',q:'Tenés que extraer datos de facturas PDF con formato inconsistente. ¿Qué combinación es más robusta?',
+        opts:['Instrucciones detalladas zero-shot con una descripción exhaustiva del formato esperado de cada campo','Few-shot examples reales junto con JSON schema estricto más retry loop con feedback del error de validación','Fine-tuning del modelo con un dataset de miles de facturas previamente etiquetadas y validadas por humanos','RAG con una base vectorial de facturas previas para que el modelo busque formatos similares como referencia'],
+        correct:1,
+        explanation:'La combinación: (1) few-shot muestra variantes reales, (2) JSON schema fuerza estructura, (3) retry con error feedback permite auto-corrección. Exactamente lo que evalúa el CCA.',
+        source:'Anthropic Docs — Structured outputs with tool use: docs.anthropic.com/en/docs/build-with-claude/tool-use/overview'},
+      {type:'quiz',q:'¿En qué situación NO conviene utilizar chain-of-thought prompting con Claude?',
+        opts:['En problemas complejos de razonamiento matemático que requieren descomponer el cálculo en múltiples pasos','Cuando se necesita latencia baja y la tarea es simple y directa, como clasificación o extracción básica','En tareas que requieren generar código paso a paso con explicación de cada decisión de implementación','En análisis de documentos extensos donde se necesita evaluar múltiples criterios de forma secuencial'],
+        correct:1,
+        explanation:'CoT agrega tokens de pensamiento que cuestan latencia y dinero. Para tareas simples (clasificar sentimiento, extraer email) es overhead innecesario. Reservalo para razonamiento complejo.',
+        source:'Anthropic Docs — Chain of thought: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought'},
+      {type:'practice',title:'Actividad práctica: Extraction Pipeline',
+        prompt:`Ejercicio avanzado de prompt engineering:
+
+ESCENARIO: Tenés emails de soporte con formato libre. Necesitás extraer:
+- Nombre del cliente, Producto, Tipo de issue, Urgencia, Resumen
+
+1. Diseñá el prompt con: system prompt, 3 few-shot examples (incluí un caso ambiguo), JSON schema, instrucciones para datos faltantes.
+
+2. Testeá con estos 3 inputs:
+   a) "Hola, soy María. La app se crashea cuando abro el dashboard. Necesito esto resuelto HOY."
+   b) "hey, wanted to know if you guys support SSO? we're evaluating tools. cheers, Tom"
+   c) "URGENT!!!!! billing charged me twice ref #4412 fix NOW or I'm switching"
+
+3. Implementá un retry si falta el campo "producto".
+
+Copiá: Tu prompt completo, los 3 outputs, si el retry fue necesario.`,minWords:30}
+    ]
+  }},
+  {id:8,title:'Context + Repaso Final',subtitle:'Exam Prep',domains:[5],tasks:[
+    {id:'w8-t1',text:'Estudiar long-context preservation strategies',domain:5,link:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips',linkLabel:'Long Context Tips'},
+    {id:'w8-t2',text:'Estudiar confidence calibration',domain:5,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems',linkLabel:'Agent Confidence'},
+    {id:'w8-t3',text:'Estudiar error handling en agentes',domain:5,link:'https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems#error-handling',linkLabel:'Error Handling'},
+    {id:'w8-t4',text:'Completar practice exam en claudecertifications.com',domain:0,link:'https://claudecertifications.com',linkLabel:'Practice Exam'},
+    {id:'w8-t5',text:'Repasar todos los dominios con notas',domain:0},
+    {id:'w8-t6',text:'Exam mock final (sin Claude ni docs)',domain:0},
+  ],challenge:{
+    title:'🧪 FINAL BOSS: Comprehensive Exam',
+    steps:[
+      {type:'quiz',q:'Tu agente procesa documentos de 200K tokens pero el modelo soporta 128K. ¿Cuál es la mejor estrategia?',
+        opts:['Truncar automáticamente el documento desde el final hasta que entre dentro del límite del context window','Chunking con overlap más summarización jerárquica: resumir cada chunk y luego procesar los resúmenes juntos','Migrar siempre a un modelo con context window más grande sin considerar los tradeoffs de costo y latencia','Comprimir el texto con un algoritmo de encoding antes de enviarlo para reducir el conteo total de tokens'],
+        correct:1,
+        explanation:'Chunking + summarización jerárquica: dividís en chunks con overlap, resumís cada uno, procesás los resúmenes. Map-reduce para LLMs.',
+        source:'Anthropic Docs — Long context tips: docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips'},
+      {type:'quiz',q:'¿Cómo se implementa "confidence calibration" en un agente basado en Claude?',
+        opts:['Configurando la temperatura del modelo en 0 para que siempre genere la respuesta más probable y determinística','Pidiendo al modelo que califique su confianza (0-100%) y usando umbrales para aceptar, reintentar o escalar','Ejecutando la misma query contra un segundo modelo diferente y comparando ambas respuestas para verificación','La confianza no se puede calibrar en LLMs porque la probabilidad de tokens no correlaciona con la veracidad'],
+        correct:1,
+        explanation:'El modelo evalúa su confianza: >80% aceptar, 50-80% verificación adicional, <50% escalar a humano o reintentar con más contexto.',
+        source:'Anthropic Docs — Building effective agents, confidence: docs.anthropic.com/en/docs/build-with-claude/agentic-systems'},
+      {type:'quiz',q:'En el examen CCA, ¿cuál es la respuesta más deficiente para un escenario de diseño de sistema?',
+        opts:['Una arquitectura que utiliza un solo agente monolítico para manejar todas las subtareas del sistema completo','Una solución que sobre-ingeniería con diez agentes especializados cuando tres agentes serían suficientes','Un diseño que omite completamente el manejo de errores, fallos y estrategias de recuperación del sistema','Todas son problemáticas, pero omitir el manejo de errores es la deficiencia más penalizada en la evaluación'],
+        correct:3,
+        explanation:'El CCA valora robustez y error handling. Un sistema sin manejo de fallos no funciona en producción. Sobre-ingeniería y monolitos son problemas, pero falta de error handling es descalificante.',
+        source:'Claude Certified Architect Study Guide — Evaluation criteria: claudecertifications.com'},
+      {type:'practice',title:'FINAL BOSS: Mock Exam Scenario',
+        prompt:`Último desafío — simulá un escenario completo del examen CCA:
+
+SCENARIO: "AI Code Review Assistant" que:
+- Se integre con GitHub via MCP
+- Analice PRs automáticamente al crearse
+- Revise: seguridad, calidad, tests, performance
+- Genere inline comments en el PR
+- Funcione con repos de hasta 500K líneas
+
+Respondé (30 min, sin docs):
+1. ARQUITECTURA: Componentes y flujo
+2. AGENTES: Qué agentes, qué tools, qué patrón
+3. MCP: Qué servers necesitás
+4. CONTEXT: Cómo manejás un diff de 50K tokens
+5. PROMPTS: System prompt del reviewer principal
+6. ERRORS: GitHub caído, modelo falla, diff enorme
+7. CONFIDENCE: Cómo filtrás falsos positivos
+
+Pedile a Claude que evalúe tu respuesta como examen CCA.`,minWords:50}
+    ]
+  }}
+];
+
+const ACHIEVEMENTS=[
+  {id:'first-blood',name:'First Blood',icon:'⚔️',desc:'Completar semana 1 (tareas + challenge)'},
+  {id:'api-warrior',name:'API Warrior',icon:'📡',desc:'Completar semanas 1 y 2'},
+  {id:'agent-smith',name:'Agent Smith',icon:'🤖',desc:'Completar dominio Agentic'},
+  {id:'tool-master',name:'Tool Master',icon:'🔧',desc:'Completar dominio MCP'},
+  {id:'code-wizard',name:'Code Wizard',icon:'🧙',desc:'Completar dominio Claude Code'},
+  {id:'prompt-sage',name:'Prompt Sage',icon:'✨',desc:'Completar dominio Prompt Eng'},
+  {id:'memory-keeper',name:'Memory Keeper',icon:'🧠',desc:'Completar dominio Context'},
+  {id:'exam-ready',name:'Exam Ready',icon:'🎯',desc:'Completar las 8 semanas'},
+  {id:'challenger',name:'Challenger',icon:'🧪',desc:'Aprobar 4 quest challenges'},
+  {id:'dedicated',name:'Dedicated',icon:'⏱️',desc:'Acumular 10 hrs de estudio'},
+  {id:'pomo-warrior',name:'Pomodoro Warrior',icon:'🍅',desc:'Completar 20 Pomodoros'},
+  {id:'certified',name:'Certified!',icon:'🏆',desc:'Marcar examen como aprobado'}
+];
+
+// ===== STATE =====
+let data;
+let quizState={current:0,answers:[],score:0,domainScores:{1:0,2:0,3:0,4:0,5:0},shuffleMaps:[]};
+let timerState={running:false,seconds:25*60,interval:null,isBreak:false,collapsed:false};
+let currentNoteTab='general';
+let previouslyUnlocked=new Set();
+// Per-render shuffle cache for challenge quizzes
+let challengeShuffleMaps={};
+
+function defaultData(){
+  return{examDate:'2026-06-15',xp:0,tasks:{},studySessions:[],
+    notes:{domain1:'',domain2:'',domain3:'',domain4:'',domain5:'',general:''},
+    examPassed:false,achievements:{},quizDone:false,quizResults:null,
+    unlockedWeeks:{},notesTimestamps:{},challenges:{}};
+}
+function load(){
+  try{const s=localStorage.getItem(STORAGE_KEY);data=s?{...defaultData(),...JSON.parse(s)}:defaultData()}catch(e){data=defaultData()}
+  WEEKS.forEach(w=>w.tasks.forEach(t=>{if(!(t.id in data.tasks))data.tasks[t.id]=false}));
+  if(!data.challenges)data.challenges={};
+  for(let i=1;i<=8;i++)if(!data.unlockedWeeks)data.unlockedWeeks={};
+  for(let i=1;i<=8;i++)data.unlockedWeeks[i]=true;
+}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+
+// ===== XP =====
+function getLevel(xp){let l=LEVELS[0];for(const v of LEVELS)if(xp>=v.xp)l=v;return l}
+function getNextLevel(xp){for(const l of LEVELS)if(xp<l.xp)return l;return null}
+function addXP(amount,el){data.xp+=amount;save();showXPPopup(amount,el);updateDashboardXP();checkAchievements()}
+function showXPPopup(amount,el){
+  const p=document.createElement('div');p.className='xp-popup';p.textContent=`+${amount} XP`;
+  if(el){const r=el.getBoundingClientRect();p.style.left=r.left+'px';p.style.top=(r.top-10)+'px'}
+  else{p.style.left='50%';p.style.top='40%';p.style.transform='translateX(-50%)'}
+  document.body.appendChild(p);setTimeout(()=>p.remove(),1300);
+}
+
+// ===== INITIAL DIAGNOSTIC QUIZ =====
+function initQuiz(){
+  document.getElementById('screen-quiz').classList.remove('hidden');
+  document.getElementById('screen-charsheet').classList.add('hidden');
+  document.getElementById('screen-main').classList.add('hidden');
+  // Pre-shuffle all questions
+  quizState={current:0,answers:[],score:0,domainScores:{1:0,2:0,3:0,4:0,5:0},shuffleMaps:[]};
+  QUIZ_QUESTIONS.forEach(q=>{
+    const {shuffled,map}=shuffleWithMap(q.opts);
+    quizState.shuffleMaps.push({shuffled,map,correctShuffled:map.indexOf(q.correct)});
+  });
+  showDiagQuestion();
+}
+function showDiagQuestion(){
+  const i=quizState.current,q=QUIZ_QUESTIONS[i],sm=quizState.shuffleMaps[i],dom=DOMAINS.find(d=>d.id===q.domain);
+  document.getElementById('quiz-counter').textContent=`Pregunta ${i+1} / 20`;
+  document.getElementById('quiz-prog').style.width=((i+1)/20*100)+'%';
+  document.getElementById('quiz-score-live').textContent=`Score: ${quizState.score}/20`;
+  document.getElementById('quiz-domain-tag').textContent=`${dom.icon} ${dom.name}`;
+  document.getElementById('quiz-question').textContent=q.q;
+  const optsEl=document.getElementById('quiz-options');optsEl.innerHTML='';
+  sm.shuffled.forEach((o,idx)=>{
+    const btn=document.createElement('button');btn.className='quiz-opt';btn.textContent=o;
+    btn.onclick=()=>selectDiagAnswer(idx);optsEl.appendChild(btn);
+  });
+  document.getElementById('quiz-feedback').classList.add('hidden');
+  document.getElementById('quiz-feedback').innerHTML='';
+  document.getElementById('quiz-next').classList.add('hidden');
+}
+function selectDiagAnswer(idx){
+  const i=quizState.current,q=QUIZ_QUESTIONS[i],sm=quizState.shuffleMaps[i];
+  const opts=document.querySelectorAll('#quiz-options .quiz-opt');
+  if(opts[0].classList.contains('disabled'))return;
+  opts.forEach((o,oi)=>{o.classList.add('disabled');if(oi===sm.correctShuffled)o.classList.add('correct');if(oi===idx&&idx!==sm.correctShuffled)o.classList.add('wrong')});
+  const isCorrect=idx===sm.correctShuffled;
+  if(isCorrect){quizState.score++;quizState.domainScores[q.domain]++}
+  quizState.answers.push(idx);
+  // Show feedback with source
+  const fb=document.getElementById('quiz-feedback');fb.classList.remove('hidden');
+  fb.innerHTML=`<div class="explanation">💡 ${isCorrect?'¡Correcto!':'Incorrecto.'} La respuesta correcta es: "${sm.shuffled[sm.correctShuffled]}"</div>
+    <div class="source-box">📚 Fuente: ${q.source}</div>`;
+  document.getElementById('quiz-next').classList.remove('hidden');
+}
+function quizNext(){quizState.current++;if(quizState.current>=20){showCharSheet();return}showDiagQuestion()}
+
+function showCharSheet(){
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-charsheet').classList.remove('hidden');
+  const pct=quizState.score/20*100;
+  let startLvl=1,startXP=0;
+  if(pct>=60){startLvl=3;startXP=600}else if(pct>=40){startLvl=2;startXP=250}
+  const lvlInfo=LEVELS.find(l=>l.lvl===startLvl);
+  const domResults=DOMAINS.map(d=>{const s=quizState.domainScores[d.id],p=s/4*100;return{...d,score:s,pct:p,status:p>=75?'STRONG':p>=50?'OK':'⚠️ FOCUS',color:p>=75?'var(--success)':p>=50?'var(--accent)':'var(--danger)'}});
+  const sorted=[...domResults].sort((a,b)=>a.pct-b.pct);
+  let h=`<h2 class="glow-gold">⚔️ CHARACTER CREATION COMPLETE</h2>
+    <p style="text-align:center;color:var(--muted)">Player: Diego Arce (darce)</p><hr class="char-divider">
+    <div style="text-align:center;margin:12px 0">
+      <div style="font-size:13px;color:var(--muted)">STARTING LEVEL</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--gold)">${startLvl} — ${lvlInfo.title}</div>
+      <div style="font-size:12px;color:var(--accent)">Starting XP: ${startXP} | Score: ${quizState.score}/20 (${pct.toFixed(0)}%)</div>
+    </div><hr class="char-divider"><div style="font-size:13px;font-weight:bold;margin-bottom:10px">SKILL ASSESSMENT</div>`;
+  domResults.forEach(d=>{h+=`<div class="skill-row"><span class="skill-label-text">${d.icon} ${d.name.split(' ')[0]}</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:${d.pct}%;background:${d.color}"></div></div><span class="skill-pct" style="color:${d.color}">${d.pct.toFixed(0)}%</span><span style="font-size:10px;width:55px;color:${d.color}">${d.status}</span></div>`});
+  h+=`<hr class="char-divider"><div style="font-size:13px;font-weight:bold;margin-bottom:8px">RECOMMENDED QUEST ORDER</div>`;
+  sorted.forEach((d,i)=>{h+=`<div style="font-size:12px;margin:4px 0;color:${d.pct<50?'var(--danger)':'var(--muted)'}"> ${i+1}. ${d.name} (${d.pct.toFixed(0)}%)${d.pct<50?' ← priority':''}</div>`});
+  document.getElementById('charsheet-content').innerHTML=h;
+  data.xp=startXP;data.quizResults={score:quizState.score,domainScores:{...quizState.domainScores}};save();
+}
+function beginQuest(){data.quizDone=true;save();showMain()}
+function resetQuiz(){if(!confirm('¿Repetir el diagnóstico? Tu XP y progreso se mantienen.'))return;data.quizDone=false;data.quizResults=null;save();initQuiz()}
+
+// ===== MAIN =====
+function showMain(){
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-charsheet').classList.add('hidden');
+  document.getElementById('screen-main').classList.remove('hidden');
+  previouslyUnlocked=new Set(Object.keys(data.achievements||{}).filter(k=>data.achievements[k]));
+  renderDashboard();renderQuests();renderDomains();renderAchievements();renderNotes();drawAvatar();
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(tab==='dashboard')renderDashboard();if(tab==='achievements')renderAchievements();
+}
+
+// ===== DASHBOARD =====
+function updateDashboardXP(){
+  const lvl=getLevel(data.xp),next=getNextLevel(data.xp);
+  const dlvl=document.getElementById('dash-level');if(dlvl)dlvl.textContent=`Level ${lvl.lvl} — ${lvl.title}`;
+  const bar=document.getElementById('dash-xp-bar'),lbl=document.getElementById('dash-xp-label');
+  if(!bar)return;
+  if(next){bar.style.width=(data.xp-lvl.xp)/(next.xp-lvl.xp)*100+'%';lbl.textContent=`${data.xp} / ${next.xp} XP`}
+  else{bar.style.width='100%';lbl.textContent=`${data.xp} XP — MAX LEVEL`}
+  drawAvatar();
+}
+function renderDashboard(){
+  const el=document.getElementById('tab-dashboard');
+  const lvl=getLevel(data.xp),next=getNextLevel(data.xp);
+  const xpPct=next?(data.xp-lvl.xp)/(next.xp-lvl.xp)*100:100;
+  const xpText=next?`${data.xp} / ${next.xp} XP`:`${data.xp} XP — MAX LEVEL`;
+  const totalTasks=WEEKS.reduce((a,w)=>a+w.tasks.length,0),doneTasks=WEEKS.reduce((a,w)=>a+w.tasks.filter(t=>data.tasks[t.id]).length,0);
+  const chPassed=Object.values(data.challenges).filter(c=>c.passed).length;
+  const mins=data.studySessions.reduce((a,s)=>a+s.minutes,0);
+  el.innerHTML=`
+    <div class="card" style="text-align:center">
+      <canvas id="avatar-canvas" class="avatar" width="64" height="64"></canvas>
+      <h2 style="margin:10px 0 2px;font-size:18px">Diego Arce</h2>
+      <div id="dash-level" style="color:var(--gold);font-size:14px;margin-bottom:10px">Level ${lvl.lvl} — ${lvl.title}</div>
+      <div class="xp-bar-wrap" style="max-width:400px;margin:0 auto">
+        <div id="dash-xp-bar" class="xp-bar" style="width:${xpPct}%"></div>
+        <div id="dash-xp-label" class="xp-label">${xpText}</div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--muted)">
+        <span>📋 ${doneTasks}/${totalTasks} tareas</span><span>🧪 ${chPassed}/8 challenges</span><span>⏱️ ${Math.floor(mins/60)}h ${mins%60}m</span>
+      </div>
+    </div>
+    <div class="card"><h3 style="text-align:center;margin-bottom:8px">⏳ Countdown al Examen</h3><div class="countdown" id="countdown"></div>
+      <div style="text-align:center;margin-top:4px"><input type="date" id="exam-date-input" value="${data.examDate||''}" style="font-size:12px" onchange="setExamDate(this.value)"></div></div>
+    <div class="card"><h3 style="margin-bottom:8px">🗺️ Quest Map</h3><div class="minimap" id="minimap"></div></div>
+    <div class="card"><h3 style="margin-bottom:8px">🏆 Recent Achievements</h3><div id="dash-recent-ach" style="font-size:13px;color:var(--muted)"></div></div>
+    <div class="card" style="text-align:center"><button class="btn btn-accent" onclick="startPomodoro()">🍅 Quick Pomodoro</button></div>
+    <div class="card"><h3 style="margin-bottom:12px">⚙️ Settings</h3>
+      <div class="settings-row"><span style="font-size:13px">Retomar diagnóstico</span><button class="btn btn-ghost btn-sm" onclick="resetQuiz()">Repetir Quiz</button></div>
+      <div class="settings-row"><span style="font-size:13px">Examen aprobado</span><button class="btn btn-ghost btn-sm" id="btn-pass" onclick="toggleExamPassed()">${data.examPassed?'Aprobado ✅':'Marcar ✅'}</button></div>
+      <div class="settings-row" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleSyncPanel()">
+          <span style="font-size:13px">☁️ Sync</span>
+          <span id="sync-toggle-arrow" style="font-size:11px;color:var(--muted)">▶</span>
+        </div>
+        <div class="sync-panel" id="sync-panel">
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">GitHub Personal Access Token (scope: gist)</label>
+            <input type="password" id="sync-token" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;font-size:12px" value="${localStorage.getItem('cca_gist_token')||''}">
+          </div>
+          <div class="sync-row">
+            <button class="sync-btn sync-btn-push" onclick="pushToGist()" id="btn-push">☁️ Push</button>
+            <button class="sync-btn sync-btn-pull" onclick="pullFromGist()" id="btn-pull">☁️ Pull</button>
+          </div>
+          <hr class="sync-divider">
+          <div class="sync-row">
+            <button class="sync-btn sync-btn-export" onclick="exportData()">📋 Export JSON</button>
+            <button class="sync-btn sync-btn-import" onclick="showImportDialog()">📥 Import JSON</button>
+          </div>
+          <div class="sync-status" id="sync-status">${getSyncStatusText()}</div>
+        </div>
+      </div>
+      <div class="settings-row"><span style="font-size:13px">Reset completo</span><button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="fullReset()">Reset</button></div>
+    </div>`;
+  drawAvatar();renderCountdown();renderMinimap();
+  const unlocked=ACHIEVEMENTS.filter(a=>data.achievements&&data.achievements[a.id]);
+  document.getElementById('dash-recent-ach').innerHTML=unlocked.length?unlocked.slice(-3).reverse().map(a=>`<span style="margin-right:8px">${a.icon} ${a.name}</span>`).join(''):'Ninguno aún';
+}
+function renderCountdown(){
+  const el=document.getElementById('countdown');if(!el)return;
+  if(!data.examDate){el.innerHTML='<span style="color:var(--muted);font-size:13px">Configurá la fecha del examen</span>';return}
+  const diff=new Date(data.examDate+'T00:00:00')-new Date();
+  if(diff<=0){el.innerHTML='<span style="color:var(--gold);font-size:16px;font-weight:bold">🎯 Exam Day!</span>';return}
+  const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4);
+  el.innerHTML=[['días',d],['horas',h],['min',m]].map(([l,v])=>`<div class="countdown-unit"><div class="countdown-num">${v}</div><div class="countdown-label">${l}</div></div>`).join('');
+}
+function setExamDate(v){data.examDate=v;save();renderCountdown()}
+function renderMinimap(){
+  const el=document.getElementById('minimap');if(!el)return;el.innerHTML='';
+  WEEKS.forEach(w=>{
+    const total=w.tasks.length,done=w.tasks.filter(t=>data.tasks[t.id]).length,ch=data.challenges['w'+w.id];
+    let cls='minimap-week';
+    if(done===total&&ch&&ch.passed)cls+=' complete';else if(done>0||ch)cls+=' partial';
+    const div=document.createElement('div');div.className=cls;div.textContent=w.id;
+    div.title=`Semana ${w.id}: ${done}/${total}${ch&&ch.passed?' ✅':''}`;
+    div.onclick=()=>{switchTab('quests');setTimeout(()=>{const c=document.querySelector(`[data-week="${w.id}"]`);if(c){c.classList.add('open');c.scrollIntoView({behavior:'smooth',block:'center'})}},100)};
+    el.appendChild(div);
+  });
+}
+
+// ===== QUESTS =====
+function renderQuests(){
+  const el=document.getElementById('tab-quests');
+  el.innerHTML='<h2 style="margin-bottom:16px;font-size:18px">📜 Weekly Quests</h2>';
+  // Reset shuffle cache for challenges on each render
+  challengeShuffleMaps={};
+  WEEKS.forEach(w=>{
+    const total=w.tasks.length,done=w.tasks.filter(t=>data.tasks[t.id]).length;
+    const ch=data.challenges['w'+w.id]||{};
+    const weekDone=done===total&&ch.passed;
+    const locked=!isWeekUnlocked(w.id);
+    const card=document.createElement('div');card.className='week-card';card.dataset.week=w.id;
+    if(locked)card.style.opacity='0.5';
+    card.innerHTML=`
+      <div class="week-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="week-num${weekDone?' done':''}">${locked?'🔒':w.id}</div>
+        <div class="week-title"><div class="week-title-text">${locked?'🔒 ':''}Semana ${w.id}: ${w.title}</div>
+          <div class="week-subtitle">${locked?'Completá el Challenge de Semana '+(w.id-1)+' para desbloquear':w.subtitle+(ch.passed?' — 🧪 Challenge ✅':'')}</div></div>
+        <div class="week-progress">${done}/${total}</div>
+      </div><div class="week-body" id="week-body-${w.id}"></div>`;
+    el.appendChild(card);
+    const body=document.getElementById('week-body-'+w.id);
+    // Quick resource links bar
+    const taskLinks=w.tasks.filter(t=>t.link);
+    if(taskLinks.length){
+      const linksBar=document.createElement('div');
+      linksBar.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:8px';
+      linksBar.innerHTML='<span style="font-size:11px;color:var(--muted);width:100%;margin-bottom:2px">📚 Quick Links</span>'+
+        taskLinks.map(t=>`<a href="${t.link}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);background:var(--bg);padding:3px 8px;border-radius:6px;text-decoration:none;border:1px solid var(--bg4);transition:.2s">${t.linkLabel||'Link'}</a>`).join('');
+      body.appendChild(linksBar);
+    }
+    w.tasks.forEach(t=>{
+      const item=document.createElement('div');item.className='task-item'+(data.tasks[t.id]?' done':'');
+      const linkHtml=t.link?` <a href="${t.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);font-size:11px;white-space:nowrap">🔗 ${t.linkLabel||'Link'}</a>`:'';
+      item.innerHTML=`<div class="task-check">${data.tasks[t.id]?'✓':''}</div><span class="task-text">${t.text}${linkHtml}</span>`;
+      item.onclick=()=>toggleTask(t.id,w,item);body.appendChild(item);
+    });
+    if(w.challenge){
+      const cbox=document.createElement('div');cbox.className='challenge-box'+(ch.passed?' passed':'');cbox.id='challenge-w'+w.id;
+      buildChallenge(cbox,w,ch);body.appendChild(cbox);
+    }
+  });
+}
+
+function buildChallenge(container,week,chData){
+  if(!chData)chData={};
+  if(!chData.stepAnswers)chData.stepAnswers={};
+  if(!chData.practiceLogs)chData.practiceLogs={};
+  const ch=week.challenge;
+  const wKey='w'+week.id;
+
+  // Generate shuffle maps for quiz steps (fresh each render for retry)
+  if(!challengeShuffleMaps[wKey])challengeShuffleMaps[wKey]={};
+  ch.steps.forEach((s,si)=>{
+    if(s.type==='quiz'&&!challengeShuffleMaps[wKey][si]){
+      const {shuffled,map}=shuffleWithMap(s.opts);
+      challengeShuffleMaps[wKey][si]={shuffled,map,correctShuffled:map.indexOf(s.correct)};
+    }
+  });
+
+  let h=`<h4>${ch.title}</h4>`;
+  if(chData.passed){h+=`<div class="quiz-result-banner pass">✅ Challenge completado — +200 XP</div>`}
+
+  // Count quiz results
+  let quizTotal=0,quizCorrect=0;
+  ch.steps.forEach((s,si)=>{
+    if(s.type==='quiz'){
+      quizTotal++;
+      const sm=challengeShuffleMaps[wKey][si];
+      if(chData.stepAnswers[si]!==undefined&&chData.stepAnswers[si]===sm.correctShuffled)quizCorrect++;
+    }
+  });
+  const allQuizAnswered=ch.steps.filter((s,si)=>s.type==='quiz').every((s,si)=>{
+    const qi=ch.steps.indexOf(s);return chData.stepAnswers[qi]!==undefined;
+  });
+  const allQuizCorrect=quizCorrect===quizTotal;
+
+  // Step dots
+  h+=`<div class="step-indicator">`;
+  ch.steps.forEach((s,si)=>{
+    let dotCls='step-dot';
+    if(s.type==='quiz'&&chData.stepAnswers[si]!==undefined){
+      const sm=challengeShuffleMaps[wKey][si];
+      dotCls+=(chData.stepAnswers[si]===sm.correctShuffled)?' done':' failed';
+    } else if(s.type==='practice'){
+      const log=chData.practiceLogs[si]||'';
+      const wc=log.trim()?log.trim().split(/\s+/).length:0;
+      if(wc>=(s.minWords||10))dotCls+=' done';
+    }
+    h+=`<div class="${dotCls}"></div>`;
+  });
+  h+=`</div>`;
+
+  // Render steps
+  ch.steps.forEach((step,si)=>{
+    if(step.type==='quiz'){
+      const sm=challengeShuffleMaps[wKey][si];
+      const answered=chData.stepAnswers[si]!==undefined;
+      const wasCorrect=answered&&chData.stepAnswers[si]===sm.correctShuffled;
+      h+=`<div style="margin-top:14px"><span class="challenge-type type-quiz">📝 Quiz</span></div>`;
+      h+=`<div style="font-size:13px;margin:8px 0;line-height:1.5">${step.q}</div>`;
+      sm.shuffled.forEach((opt,oi)=>{
+        let cls='cq-opt';
+        if(answered){cls+=' disabled';if(oi===sm.correctShuffled)cls+=' correct';if(oi===chData.stepAnswers[si]&&!wasCorrect&&oi!==sm.correctShuffled)cls+=' wrong'}
+        h+=`<button class="${cls}" onclick="answerChallengeQuiz(${week.id},${si},${oi})">${esc(opt)}</button>`;
+      });
+      if(answered){
+        h+=`<div class="explanation">💡 ${wasCorrect?'¡Correcto!':'Incorrecto.'} ${step.explanation}</div>`;
+        h+=`<div class="source-box">📚 Fuente: ${step.source}</div>`;
+      }
+    } else if(step.type==='practice'){
+      const log=chData.practiceLogs[si]||'';
+      const minW=step.minWords||10;
+      const wc=log.trim()?log.trim().split(/\s+/).length:0;
+      h+=`<div style="margin-top:14px"><span class="challenge-type type-practice">🛠️ Práctica supervisada</span></div>`;
+      h+=`<div style="font-size:13px;font-weight:bold;margin:8px 0">${step.title}</div>`;
+      h+=`<div class="prompt-block"><button class="copy-btn" onclick="copyPrompt(this)">📋 Copiar</button>${esc(step.prompt)}</div>`;
+      h+=`<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Pegá acá tu trabajo (mínimo ${minW} palabras):</div>`;
+      h+=`<textarea class="practice-log" data-week="${week.id}" data-step="${si}" placeholder="Copiá acá lo que hiciste con Claude..." oninput="savePracticeLog(${week.id},${si},this)">${esc(log)}</textarea>`;
+      h+=`<div style="font-size:11px;color:${wc>=minW?'var(--success)':'var(--muted)'}"> ${wc}/${minW} palabras ${wc>=minW?'✅':''}</div>`;
+    }
+  });
+
+  // Quiz failed? Show retry
+  if(allQuizAnswered&&!allQuizCorrect&&!chData.passed){
+    h+=`<div class="quiz-result-banner fail">❌ Quiz: ${quizCorrect}/${quizTotal} correctas — necesitás ${quizTotal}/${quizTotal} para completar el challenge</div>`;
+    h+=`<div style="text-align:center;margin-top:10px"><button class="btn btn-accent btn-sm" onclick="retryChallengeQuiz(${week.id})">🔄 Reintentar Quiz</button></div>`;
+  }
+
+  // Complete button — requires ALL quiz correct + all practice done
+  if(!chData.passed){
+    const practicesDone=ch.steps.filter(s=>s.type==='practice').every((s,i)=>{
+      const si=ch.steps.indexOf(s);const log=chData.practiceLogs[si]||'';const wc=log.trim()?log.trim().split(/\s+/).length:0;return wc>=(s.minWords||10);
+    });
+    const canComplete=allQuizCorrect&&practicesDone;
+    h+=`<div style="text-align:center;margin-top:16px"><button class="btn ${canComplete?'btn-gold':'btn-ghost'}" ${canComplete?'':`disabled style="opacity:.4;cursor:not-allowed"`} onclick="completeChallenge(${week.id})">🏆 Completar Challenge (+200 XP)</button></div>`;
+    if(!canComplete){
+      let missing=[];
+      if(!allQuizCorrect&&allQuizAnswered)missing.push('acertá todas las preguntas');
+      else if(!allQuizAnswered)missing.push('respondé todas las preguntas');
+      if(!practicesDone)missing.push('completá las actividades prácticas');
+      h+=`<div style="text-align:center;font-size:11px;color:var(--muted);margin-top:6px">Falta: ${missing.join(' y ')}</div>`;
+    }
+  }
+
+  container.innerHTML=h;
+}
+
+function answerChallengeQuiz(weekId,stepIdx,optIdx){
+  const key='w'+weekId;
+  if(!data.challenges[key])data.challenges[key]={passed:false,stepAnswers:{},practiceLogs:{}};
+  if(data.challenges[key].stepAnswers[stepIdx]!==undefined)return;
+  data.challenges[key].stepAnswers[stepIdx]=optIdx;
+  save();
+  // Re-render just the challenge box
+  const week=WEEKS.find(w=>w.id===weekId);
+  const cbox=document.getElementById('challenge-w'+weekId);
+  if(cbox&&week)buildChallenge(cbox,week,data.challenges[key]);
+}
+
+function retryChallengeQuiz(weekId){
+  const key='w'+weekId;
+  if(!data.challenges[key])return;
+  // Clear only quiz answers, keep practice logs
+  const ch=WEEKS.find(w=>w.id===weekId).challenge;
+  ch.steps.forEach((s,si)=>{if(s.type==='quiz')delete data.challenges[key].stepAnswers[si]});
+  // Clear shuffle cache so new order
+  delete challengeShuffleMaps[key];
+  save();
+  const week=WEEKS.find(w=>w.id===weekId);
+  const cbox=document.getElementById('challenge-w'+weekId);
+  if(cbox&&week)buildChallenge(cbox,week,data.challenges[key]);
+}
+
+function savePracticeLog(weekId,stepIdx,textarea){
+  const key='w'+weekId;
+  if(!data.challenges[key])data.challenges[key]={passed:false,stepAnswers:{},practiceLogs:{}};
+  if(!data.challenges[key].practiceLogs)data.challenges[key].practiceLogs={};
+  data.challenges[key].practiceLogs[stepIdx]=textarea.value;
+  save();
+  // Debounced re-render of challenge (only update button state, not full rebuild to avoid losing cursor)
+  clearTimeout(savePracticeLog._timer);
+  savePracticeLog._timer=setTimeout(()=>{
+    const week=WEEKS.find(w=>w.id===weekId);
+    const cbox=document.getElementById('challenge-w'+weekId);
+    if(cbox&&week){
+      // Save cursor position
+      const sel=textarea.selectionStart;
+      buildChallenge(cbox,week,data.challenges[key]);
+      // Restore focus
+      const newTa=cbox.querySelector(`textarea[data-week="${weekId}"][data-step="${stepIdx}"]`);
+      if(newTa){newTa.focus();newTa.setSelectionRange(sel,sel)}
+    }
+  },800);
+}
+
+function completeChallenge(weekId){
+  const key='w'+weekId;
+  if(!data.challenges[key])return;
+  data.challenges[key].passed=true;save();
+  addXP(200,null);
+  showModal('🧪 Quest Challenge Passed!',`Semana ${weekId} challenge completado\n+200 XP bonus!`);
+  renderQuests();renderDashboard();
+  setTimeout(()=>{const c=document.querySelector(`[data-week="${weekId}"]`);if(c)c.classList.add('open')},100);
+}
+
+function copyPrompt(btn){
+  const block=btn.parentElement;const text=block.textContent.replace('📋 Copiar','').trim();
+  navigator.clipboard.writeText(text).then(()=>{btn.textContent='✅ Copiado';setTimeout(()=>btn.textContent='📋 Copiar',1500)});
+}
+function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+
+// ===== TASK TOGGLE =====
+function isWeekUnlocked(weekId){
+  if(weekId<=1)return true;
+  const prev=data.challenges['w'+(weekId-1)];
+  return prev&&prev.passed;
+}
+function toggleTask(taskId,week,el){
+  if(!isWeekUnlocked(week.id)){showModal('🔒 Semana bloqueada','Completá el Challenge de la Semana '+(week.id-1)+' para desbloquear.');return}
+  const wasDone=data.tasks[taskId];data.tasks[taskId]=!wasDone;save();
+  if(!wasDone){
+    addXP(50,el);
+    if(week.tasks.every(t=>data.tasks[t.id]))setTimeout(()=>showModal('🎉 Tareas de Semana '+week.id+' completadas!','Ahora completá el Quest Challenge para el bonus XP.'),400);
+    const task=week.tasks.find(t=>t.id===taskId);
+    if(task&&task.domain>0&&isDomainComplete(task.domain))setTimeout(()=>{addXP(300,el);const dom=DOMAINS.find(d=>d.id===task.domain);showModal(`${dom.icon} Dominio Completado!`,`${dom.name} — +300 XP bonus!`)},800);
+  }
+  renderQuests();renderDomains();renderDashboard();
+  setTimeout(()=>{const c=document.querySelector(`[data-week="${week.id}"]`);if(c)c.classList.add('open')},50);
+}
+
+function isWeekComplete(wid){const w=WEEKS.find(w=>w.id===wid);return w&&w.tasks.every(t=>data.tasks[t.id])&&data.challenges['w'+wid]&&data.challenges['w'+wid].passed}
+function isDomainComplete(did){const ts=[];WEEKS.forEach(w=>w.tasks.forEach(t=>{if(t.domain===did)ts.push(t)}));return ts.length>0&&ts.every(t=>data.tasks[t.id])}
+function getDomainProgress(did){const ts=[];WEEKS.forEach(w=>w.tasks.forEach(t=>{if(t.domain===did)ts.push(t)}));if(!ts.length)return{done:0,total:0,pct:0};const d=ts.filter(t=>data.tasks[t.id]).length;return{done:d,total:ts.length,pct:d/ts.length*100}}
+
+// ===== DOMAINS =====
+function renderDomains(){
+  const el=document.getElementById('tab-domains');
+  el.innerHTML='<h2 style="margin-bottom:16px;font-size:18px">🗡️ Skill Domains</h2>';
+  const qr=data.quizResults;
+  DOMAINS.forEach(d=>{
+    const prog=getDomainProgress(d.id);const quizPct=qr?(qr.domainScores[d.id]||0)/4*100:null;
+    const card=document.createElement('div');card.className='domain-card';
+    let badge='';if(quizPct!==null){if(quizPct>=75)badge='<span class="domain-badge badge-strong">✅ Strong</span>';else if(quizPct<50)badge='<span class="domain-badge badge-focus">⚠️ Focus</span>'}
+    card.innerHTML=`<div class="domain-header"><span class="domain-icon">${d.icon}</span><div class="domain-info"><div class="domain-name">${d.name}</div><div class="domain-weight">Peso examen: ${d.weight}% — ${prog.done}/${prog.total} tareas</div></div>${badge}</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" style="width:${prog.pct}%;background:${prog.pct===100?'var(--success)':'var(--primary)'}"></div></div>
+      <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px">${prog.pct.toFixed(0)}%</div>`;
+    const tasks=[];WEEKS.forEach(w=>w.tasks.forEach(t=>{if(t.domain===d.id)tasks.push(t)}));
+    if(tasks.length){const list=document.createElement('div');list.style.marginTop='8px';
+      tasks.forEach(t=>{const it=document.createElement('div');it.className='task-item'+(data.tasks[t.id]?' done':'');const lk=t.link?` <a href="${t.link}" target="_blank" rel="noopener" style="color:var(--accent);font-size:10px;white-space:nowrap">🔗 ${t.linkLabel||'Link'}</a>`:'';it.innerHTML=`<div class="task-check">${data.tasks[t.id]?'✓':''}</div><span class="task-text">${t.text}${lk}</span>`;it.style.fontSize='12px';list.appendChild(it)});card.appendChild(list)}
+    el.appendChild(card);
+  });
+}
+
+// ===== ACHIEVEMENTS =====
+function renderAchievements(){
+  const el=document.getElementById('tab-achievements');
+  el.innerHTML='<h2 style="margin-bottom:16px;font-size:18px">🏆 Achievements</h2><div class="ach-grid" id="ach-grid"></div>';
+  const grid=document.getElementById('ach-grid');
+  ACHIEVEMENTS.forEach(a=>{
+    const u=data.achievements&&data.achievements[a.id];
+    const card=document.createElement('div');card.className='ach-card'+(u?' unlocked':'')+(u&&!previouslyUnlocked.has(a.id)?' just-unlocked':'');
+    card.innerHTML=`<div class="ach-icon">${a.icon}</div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div>`;
+    grid.appendChild(card);
+  });
+}
+function checkAchievements(){
+  if(!data.achievements)data.achievements={};
+  const conds={
+    'first-blood':()=>isWeekComplete(1),
+    'api-warrior':()=>isWeekComplete(1)&&isWeekComplete(2),
+    'agent-smith':()=>isDomainComplete(1),
+    'tool-master':()=>isDomainComplete(2),
+    'code-wizard':()=>isDomainComplete(3),
+    'prompt-sage':()=>isDomainComplete(4),
+    'memory-keeper':()=>isDomainComplete(5),
+    'exam-ready':()=>{for(let i=1;i<=8;i++)if(!isWeekComplete(i))return false;return true},
+    'challenger':()=>Object.values(data.challenges).filter(c=>c.passed).length>=4,
+    'dedicated':()=>data.studySessions.reduce((a,s)=>a+s.minutes,0)>=600,
+    'pomo-warrior':()=>data.studySessions.length>=20,
+    'certified':()=>data.examPassed
+  };
+  let any=false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(!data.achievements[a.id]&&conds[a.id]&&conds[a.id]()){
+      data.achievements[a.id]=true;data.xp+=100;any=true;
+      setTimeout(()=>showModal(`${a.icon} Achievement Unlocked!`,`${a.name} — ${a.desc}\n+100 XP`),500);
+    }
+  });
+  if(any){save();renderAchievements()}
+}
+
+// ===== NOTES =====
+function renderNotes(){
+  const tabs=document.getElementById('notes-tabs');
+  const nk=[{key:'general',label:'📋 General'},{key:'domain1',label:'🗡️ Agentic'},{key:'domain2',label:'🔧 MCP'},{key:'domain3',label:'⚙️ Claude Code'},{key:'domain4',label:'✨ Prompts'},{key:'domain5',label:'🧠 Context'}];
+  tabs.innerHTML='';nk.forEach(n=>{const b=document.createElement('button');b.textContent=n.label;b.className=currentNoteTab===n.key?'active':'';b.onclick=()=>{currentNoteTab=n.key;renderNotes()};tabs.appendChild(b)});
+  const area=document.getElementById('notes-area');area.value=data.notes[currentNoteTab]||'';
+  const wc=area.value.trim()?area.value.trim().split(/\s+/).length:0;
+  document.getElementById('notes-wc').textContent=wc+' palabras';
+  const ts=data.notesTimestamps&&data.notesTimestamps[currentNoteTab];
+  document.getElementById('notes-ts').textContent=ts?'Guardado: '+ts:'';
+}
+function saveNote(){
+  const area=document.getElementById('notes-area');data.notes[currentNoteTab]=area.value;
+  if(!data.notesTimestamps)data.notesTimestamps={};
+  data.notesTimestamps[currentNoteTab]=new Date().toLocaleString('es-AR');save();
+  const wc=area.value.trim()?area.value.trim().split(/\s+/).length:0;
+  document.getElementById('notes-wc').textContent=wc+' palabras';
+  document.getElementById('notes-ts').textContent='Guardado: '+data.notesTimestamps[currentNoteTab];
+}
+
+// ===== TIMER =====
+function startPomodoro(){document.getElementById('timer-float').classList.remove('hidden');if(!timerState.running)resetTimer()}
+function toggleTimer(){
+  if(timerState.running){clearInterval(timerState.interval);timerState.running=false;document.getElementById('timer-start-btn').textContent='▶ Start';document.getElementById('timer-float').classList.remove('running')}
+  else{timerState.running=true;document.getElementById('timer-start-btn').textContent='⏸ Pause';document.getElementById('timer-float').classList.add('running');
+    timerState.interval=setInterval(()=>{timerState.seconds--;updateTimerDisplay();
+      if(timerState.seconds<=0){clearInterval(timerState.interval);timerState.running=false;document.getElementById('timer-float').classList.remove('running');
+        if(!timerState.isBreak){const dom=parseInt(document.getElementById('timer-domain').value);data.studySessions.push({domain:dom,minutes:25,date:new Date().toISOString()});addXP(25,document.getElementById('timer-float'));save();showModal('🍅 Pomodoro Complete!','+25 XP — Tomá un break de 5 minutos');timerState.isBreak=true;timerState.seconds=5*60;updateTimerDisplay();document.getElementById('timer-start-btn').textContent='▶ Break'}
+        else{timerState.isBreak=false;timerState.seconds=25*60;updateTimerDisplay();document.getElementById('timer-start-btn').textContent='▶ Start';showModal('☕ Break Over!','¿Listo para otra sesión?')}
+        checkAchievements()}
+    },1000)}
+}
+function resetTimer(){clearInterval(timerState.interval);timerState.running=false;timerState.isBreak=false;timerState.seconds=25*60;updateTimerDisplay();document.getElementById('timer-start-btn').textContent='▶ Start';document.getElementById('timer-float').classList.remove('running')}
+function updateTimerDisplay(){const m=Math.floor(timerState.seconds/60),s=timerState.seconds%60;document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
+function closeTimer(){clearInterval(timerState.interval);timerState.running=false;document.getElementById('timer-float').classList.add('hidden')}
+function toggleTimerCollapse(){timerState.collapsed=!timerState.collapsed;document.getElementById('timer-body').style.display=timerState.collapsed?'none':'block'}
+
+// ===== MODAL =====
+function showModal(title,msg){
+  const o=document.createElement('div');o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><h2 style="color:var(--gold);margin-bottom:12px;font-size:20px">${title}</h2><p style="color:var(--text);margin-bottom:20px;white-space:pre-line;font-size:14px">${msg}</p><button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">OK</button></div>`;
+  o.onclick=e=>{if(e.target===o)o.remove()};document.body.appendChild(o);
+}
+
+// ===== AVATAR =====
+function drawAvatar(){
+  const c=document.getElementById('avatar-canvas');if(!c)return;
+  const ctx=c.getContext('2d');const lvl=getLevel(data.xp);
+  ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,64,64);
+  const colors=['#7c3aed','#6d28d9','#5b21b6','#4c1d95','#3b0764','#7c3aed','#06b6d4','#f59e0b'];
+  const bc=colors[Math.min(lvl.lvl-1,colors.length-1)];
+  ctx.fillStyle=lvl.lvl>=6?'#f59e0b':lvl.lvl>=4?'#06b6d4':'#7c3aed';
+  ctx.fillRect(20,4,24,8);if(lvl.lvl>=8){ctx.fillRect(28,0,8,4);ctx.fillRect(24,0,4,4);ctx.fillRect(36,0,4,4)}
+  ctx.fillStyle='#fbbf24';ctx.fillRect(22,12,20,16);
+  ctx.fillStyle='#0d0d1a';ctx.fillRect(26,18,4,4);ctx.fillRect(34,18,4,4);
+  ctx.fillStyle='#ef4444';ctx.fillRect(28,24,8,2);
+  ctx.fillStyle=bc;ctx.fillRect(18,28,28,20);ctx.fillRect(10,30,8,14);ctx.fillRect(46,30,8,14);
+  if(lvl.lvl>=4){ctx.fillStyle='#94a3b8';ctx.fillRect(54,20,3,20);ctx.fillStyle='#f59e0b';ctx.fillRect(52,38,7,4)}
+  if(lvl.lvl>=6){ctx.fillStyle='#f59e0b';ctx.fillRect(10,28,8,3)}
+  ctx.fillStyle='#1e293b';ctx.fillRect(22,48,10,14);ctx.fillRect(34,48,10,14);
+  ctx.fillStyle='#78350f';ctx.fillRect(20,58,12,6);ctx.fillRect(32,58,12,6);
+}
+
+// ===== SETTINGS =====
+function toggleExamPassed(){data.examPassed=!data.examPassed;save();checkAchievements();renderDashboard()}
+function fullReset(){if(!confirm('⚠️ Esto borra TODO tu progreso. ¿Estás seguro?'))return;if(!confirm('¿Realmente seguro?'))return;localStorage.removeItem(STORAGE_KEY);location.reload()}
+
+// ===== SYNC =====
+function toggleSyncPanel(){
+  const panel=document.getElementById('sync-panel');
+  const arrow=document.getElementById('sync-toggle-arrow');
+  if(!panel)return;
+  panel.classList.toggle('open');
+  arrow.textContent=panel.classList.contains('open')?'▼':'▶';
+}
+
+function getSyncStatusText(){
+  const lastSync=localStorage.getItem('cca_last_sync');
+  if(!lastSync)return 'Sin sincronización previa';
+  const diff=Date.now()-new Date(lastSync).getTime();
+  if(diff<60000)return '🟢 Último sync: hace menos de 1 min';
+  if(diff<3600000)return `🟢 Último sync: hace ${Math.floor(diff/60000)} min`;
+  if(diff<86400000)return `🟡 Último sync: hace ${Math.floor(diff/3600000)}h`;
+  return `🔴 Último sync: hace ${Math.floor(diff/86400000)} días`;
+}
+
+function saveGistConfig(token,gistId){
+  if(token)localStorage.setItem('cca_gist_token',token);
+  if(gistId)localStorage.setItem('cca_gist_id',gistId);
+}
+function loadGistConfig(){
+  return{token:localStorage.getItem('cca_gist_token')||'',gistId:localStorage.getItem('cca_gist_id')||''};
+}
+
+function setSyncStatus(msg){const el=document.getElementById('sync-status');if(el)el.textContent=msg}
+function setSyncBtnLoading(btnId,loading){
+  const btn=document.getElementById(btnId);if(!btn)return;
+  if(loading){btn.dataset.origHtml=btn.innerHTML;btn.innerHTML='<span class="sync-spinner"></span>';btn.disabled=true}
+  else{btn.innerHTML=btn.dataset.origHtml||btn.innerHTML;btn.disabled=false}
+}
+
+async function pushToGist(){
+  const tokenInput=document.getElementById('sync-token');
+  const token=tokenInput?tokenInput.value.trim():'';
+  if(!token){setSyncStatus('🔴 Error: ingresá un GitHub token');return}
+  saveGistConfig(token);
+  setSyncBtnLoading('btn-push',true);
+  const config=loadGistConfig();
+  const payload=JSON.stringify(data,null,2);
+  const body={description:'CCA Quest Progress Sync',public:false,files:{'cca-quest-progress.json':{content:payload}}};
+  try{
+    let res;
+    if(config.gistId){
+      res=await fetch(`https://api.github.com/gists/${config.gistId}`,{method:'PATCH',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({files:{'cca-quest-progress.json':{content:payload}}})});
+      if(res.status===404){
+        res=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      }
+    }else{
+      res=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    }
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.message||`HTTP ${res.status}`)}
+    const gist=await res.json();
+    saveGistConfig(token,gist.id);
+    localStorage.setItem('cca_last_sync',new Date().toISOString());
+    setSyncStatus('🟢 Push exitoso — '+new Date().toLocaleTimeString());
+  }catch(e){
+    setSyncStatus('🔴 Error: '+e.message);
+  }finally{setSyncBtnLoading('btn-push',false)}
+}
+
+async function pullFromGist(){
+  const tokenInput=document.getElementById('sync-token');
+  const token=tokenInput?tokenInput.value.trim():'';
+  if(!token){setSyncStatus('🔴 Error: ingresá un GitHub token');return}
+  saveGistConfig(token);
+  const config=loadGistConfig();
+  if(!config.gistId){
+    setSyncBtnLoading('btn-pull',true);
+    try{
+      const res=await fetch('https://api.github.com/gists',{headers:{'Authorization':`token ${token}`}});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      const gists=await res.json();
+      const found=gists.find(g=>g.files&&g.files['cca-quest-progress.json']);
+      if(!found){setSyncStatus('🔴 No se encontró un Gist con cca-quest-progress.json. Hacé Push primero.');return}
+      saveGistConfig(token,found.id);
+      config.gistId=found.id;
+    }catch(e){setSyncStatus('🔴 Error buscando Gist: '+e.message);return}
+    finally{setSyncBtnLoading('btn-pull',false)}
+  }
+  setSyncBtnLoading('btn-pull',true);
+  try{
+    const res=await fetch(`https://api.github.com/gists/${config.gistId}`,{headers:{'Authorization':`token ${token}`}});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const gist=await res.json();
+    const file=gist.files['cca-quest-progress.json'];
+    if(!file||!file.content)throw new Error('Archivo no encontrado en el Gist');
+    const remote=JSON.parse(file.content);
+    if(!remote.quizDone&&!remote.xp&&!remote.tasks)throw new Error('El JSON no parece ser datos válidos de CCA Quest');
+    const hasLocal=data.xp>0||Object.keys(data.tasks||{}).length>0;
+    if(hasLocal&&!confirm('Hay progreso local. ¿Reemplazar con los datos del Gist?'))return;
+    Object.assign(data,remote);
+    save();
+    localStorage.setItem('cca_last_sync',new Date().toISOString());
+    setSyncStatus('🟢 Pull exitoso — '+new Date().toLocaleTimeString());
+    renderDashboard();renderQuests();renderDomains();renderAchievements();drawAvatar();
+  }catch(e){
+    setSyncStatus('🔴 Error: '+e.message);
+  }finally{setSyncBtnLoading('btn-pull',false)}
+}
+
+function exportData(){
+  const json=JSON.stringify(data,null,2);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(json).then(()=>setSyncStatus('📋 JSON copiado al clipboard')).catch(()=>downloadJson(json));
+  }else{downloadJson(json)}
+}
+function downloadJson(json){
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cca-quest-backup.json';a.click();
+  URL.revokeObjectURL(a.href);setSyncStatus('📥 Archivo descargado');
+}
+
+function showImportDialog(){
+  const overlay=document.createElement('div');overlay.className='modal-overlay';
+  overlay.innerHTML=`<div class="modal">
+    <h3 style="margin-bottom:12px">📥 Import JSON</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Pegá el JSON exportado desde otro dispositivo:</p>
+    <textarea id="import-textarea" style="width:100%;min-height:150px;background:var(--bg);border:1px solid var(--bg4);border-radius:8px;padding:10px;color:var(--text);font-size:12px;font-family:inherit;resize:vertical" placeholder='{"quizDone":true,"xp":1200,...}'></textarea>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+      <button class="btn btn-primary btn-sm" onclick="doImport()">Importar</button>
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+    </div>
+    <div id="import-error" style="color:var(--danger);font-size:11px;margin-top:8px"></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+}
+function doImport(){
+  const textarea=document.getElementById('import-textarea');
+  const errEl=document.getElementById('import-error');
+  if(!textarea)return;
+  try{
+    const imported=JSON.parse(textarea.value.trim());
+    if(!imported.quizDone&&!imported.xp&&!imported.tasks)throw new Error('No parece ser un JSON de CCA Quest válido');
+    if(!confirm('¿Reemplazar progreso local con estos datos?'))return;
+    Object.assign(data,imported);
+    save();
+    document.querySelector('.modal-overlay').remove();
+    renderDashboard();renderQuests();renderDomains();renderAchievements();drawAvatar();
+    setSyncStatus('✅ Datos importados correctamente');
+  }catch(e){
+    if(errEl)errEl.textContent='Error: '+e.message;
+  }
+}
+
+// ===== INIT =====
+load();if(!data.quizDone)initQuiz();else showMain();
+</script>
+</body>
+</html>
