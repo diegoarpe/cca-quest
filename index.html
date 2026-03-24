@@ -708,6 +708,23 @@ function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 // ===== XP =====
 function getLevel(xp){let l=LEVELS[0];for(const v of LEVELS)if(xp>=v.xp)l=v;return l}
 function getNextLevel(xp){for(const l of LEVELS)if(xp<l.xp)return l;return null}
+function recalcXP(){
+  let xp=0;
+  // Quiz diagnóstico base XP
+  if(data.quizResults&&data.quizResults.score!=null)xp+=data.quizResults.score*50;
+  // Tareas: 50 XP cada una
+  WEEKS.forEach(w=>w.tasks.forEach(t=>{if(data.tasks[t.id])xp+=50}));
+  // Challenges: 200 XP cada uno
+  Object.values(data.challenges||{}).forEach(c=>{if(c&&c.passed)xp+=200});
+  // Achievements: 100 XP cada uno
+  Object.keys(data.achievements||{}).forEach(k=>{if(data.achievements[k])xp+=100});
+  // Pomodoros: 25 XP cada uno
+  xp+=(data.studySessions||[]).length*25;
+  // Domain completion bonus: 300 XP por dominio completo
+  DOMAINS.forEach(d=>{const ts=[];WEEKS.forEach(w=>w.tasks.forEach(t=>{if(t.domain===d.id)ts.push(t)}));if(ts.length>0&&ts.every(t=>data.tasks[t.id]))xp+=300});
+  data.xp=xp;save();
+  return xp;
+}
 function addXP(amount,el){data.xp+=amount;save();showXPPopup(amount,el);updateDashboardXP();checkAchievements()}
 function showXPPopup(amount,el){
   const p=document.createElement('div');p.className='xp-popup';p.textContent=`+${amount} XP`;
@@ -1089,9 +1106,10 @@ function savePracticeLog(weekId,stepIdx,textarea){
 function completeChallenge(weekId){
   const key='w'+weekId;
   if(!data.challenges[key])return;
-  data.challenges[key].passed=true;save();
-  addXP(200,null);
-  showModal('🧪 Quest Challenge Passed!',`Semana ${weekId} challenge completado\n+200 XP bonus!`);
+  data.challenges[key].passed=true;
+  const oldXP=data.xp;recalcXP();const diff=data.xp-oldXP;
+  if(diff>0)showXPPopup(diff,null);
+  showModal('🧪 Quest Challenge Passed!',`Semana ${weekId} challenge completado\n+${diff} XP bonus!`);
   renderQuests();renderDashboard();
   setTimeout(()=>{const c=document.querySelector(`[data-week="${weekId}"]`);if(c)c.classList.add('open')},100);
 }
@@ -1110,13 +1128,17 @@ function isWeekUnlocked(weekId){
 }
 function toggleTask(taskId,week,el){
   if(!isWeekUnlocked(week.id)){showModal('🔒 Semana bloqueada','Completá el Challenge de la Semana '+(week.id-1)+' para desbloquear.');return}
-  const wasDone=data.tasks[taskId];data.tasks[taskId]=!wasDone;save();
+  const wasDone=data.tasks[taskId];data.tasks[taskId]=!wasDone;
+  const oldXP=data.xp;
+  recalcXP();
+  const diff=data.xp-oldXP;
+  if(diff>0)showXPPopup(diff,el);
   if(!wasDone){
-    addXP(50,el);
     if(week.tasks.every(t=>data.tasks[t.id]))setTimeout(()=>showModal('🎉 Tareas de Semana '+week.id+' completadas!','Ahora completá el Quest Challenge para el bonus XP.'),400);
     const task=week.tasks.find(t=>t.id===taskId);
-    if(task&&task.domain>0&&isDomainComplete(task.domain))setTimeout(()=>{addXP(300,el);const dom=DOMAINS.find(d=>d.id===task.domain);showModal(`${dom.icon} Dominio Completado!`,`${dom.name} — +300 XP bonus!`)},800);
+    if(task&&task.domain>0&&isDomainComplete(task.domain))setTimeout(()=>showModal(`${DOMAINS.find(d=>d.id===task.domain).icon} Dominio Completado!`,`${DOMAINS.find(d=>d.id===task.domain).name} — +300 XP bonus!`),800);
   }
+  updateDashboardXP();checkAchievements();
   renderQuests();renderDomains();renderDashboard();
   setTimeout(()=>{const c=document.querySelector(`[data-week="${week.id}"]`);if(c)c.classList.add('open')},50);
 }
@@ -1175,11 +1197,11 @@ function checkAchievements(){
   let any=false;
   ACHIEVEMENTS.forEach(a=>{
     if(!data.achievements[a.id]&&conds[a.id]&&conds[a.id]()){
-      data.achievements[a.id]=true;data.xp+=100;any=true;
+      data.achievements[a.id]=true;any=true;
       setTimeout(()=>showModal(`${a.icon} Achievement Unlocked!`,`${a.name} — ${a.desc}\n+100 XP`),500);
     }
   });
-  if(any){save();renderAchievements()}
+  if(any){recalcXP();save();renderAchievements();updateDashboardXP()}
 }
 
 // ===== NOTES =====
@@ -1209,7 +1231,7 @@ function toggleTimer(){
   else{timerState.running=true;document.getElementById('timer-start-btn').textContent='⏸ Pause';document.getElementById('timer-float').classList.add('running');
     timerState.interval=setInterval(()=>{timerState.seconds--;updateTimerDisplay();
       if(timerState.seconds<=0){clearInterval(timerState.interval);timerState.running=false;document.getElementById('timer-float').classList.remove('running');
-        if(!timerState.isBreak){const dom=parseInt(document.getElementById('timer-domain').value);data.studySessions.push({domain:dom,minutes:25,date:new Date().toISOString()});addXP(25,document.getElementById('timer-float'));save();showModal('🍅 Pomodoro Complete!','+25 XP — Tomá un break de 5 minutos');timerState.isBreak=true;timerState.seconds=5*60;updateTimerDisplay();document.getElementById('timer-start-btn').textContent='▶ Break'}
+        if(!timerState.isBreak){const dom=parseInt(document.getElementById('timer-domain').value);data.studySessions.push({domain:dom,minutes:25,date:new Date().toISOString()});recalcXP();showXPPopup(25,document.getElementById('timer-float'));updateDashboardXP();showModal('🍅 Pomodoro Complete!','+25 XP — Tomá un break de 5 minutos');timerState.isBreak=true;timerState.seconds=5*60;updateTimerDisplay();document.getElementById('timer-start-btn').textContent='▶ Break'}
         else{timerState.isBreak=false;timerState.seconds=25*60;updateTimerDisplay();document.getElementById('timer-start-btn').textContent='▶ Start';showModal('☕ Break Over!','¿Listo para otra sesión?')}
         checkAchievements()}
     },1000)}
@@ -1426,7 +1448,7 @@ function doImportAndReload(){
 }
 
 // ===== INIT =====
-load();if(!data.quizDone)initQuiz();else showMain();
+load();if(data.quizDone)recalcXP();if(!data.quizDone)initQuiz();else showMain();
 </script>
 </body>
 </html>
