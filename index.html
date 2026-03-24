@@ -189,6 +189,26 @@ input:focus,textarea:focus,select:focus{border-color:var(--primary)}
 .timer-display{font-size:28px;font-weight:bold;text-align:center;margin:8px 0}
 .timer-controls{display:flex;gap:6px;justify-content:center}
 
+.guide-section{margin-bottom:12px}
+.guide-section summary{cursor:pointer;font-size:14px;font-weight:bold;color:var(--accent);padding:10px 0;list-style:none;display:flex;align-items:center;gap:8px}
+.guide-section summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block}
+.guide-section[open] summary::before{transform:rotate(90deg)}
+.guide-section summary:hover{color:var(--primary)}
+.guide-content{font-size:12px;line-height:1.7;color:var(--text);padding:0 0 12px}
+.guide-content h4{color:var(--gold);font-size:13px;margin:12px 0 6px}
+.guide-content p,.guide-content li{margin-bottom:6px}
+.guide-content ul{padding-left:18px;margin:6px 0}
+.guide-content .tip{background:rgba(16,185,129,.08);border-left:3px solid var(--success);padding:6px 10px;border-radius:0 6px 6px 0;margin:8px 0;font-size:11px}
+.guide-content .trap{background:rgba(239,68,68,.08);border-left:3px solid var(--danger);padding:6px 10px;border-radius:0 6px 6px 0;margin:8px 0;font-size:11px}
+.guide-content .quote{background:var(--bg3);border-left:3px solid var(--primary);padding:8px 12px;border-radius:0 6px 6px 0;margin:8px 0;font-size:11px;font-style:italic;color:var(--muted)}
+.guide-content code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--accent)}
+.guide-content table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px}
+.guide-content th{background:var(--bg3);padding:6px 8px;text-align:left;color:var(--accent);border:1px solid var(--bg4)}
+.guide-content td{padding:6px 8px;border:1px solid var(--bg4)}
+.guide-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.guide-tabs button{padding:6px 10px;border-radius:6px;background:var(--bg3);color:var(--muted);font-size:11px;transition:.2s;cursor:pointer;border:none;font-family:inherit}
+.guide-tabs button.active{background:var(--primary);color:var(--white)}
+
 @media(max-width:600px){
   .nav button{font-size:11px;padding:8px 4px}
   .ach-grid{grid-template-columns:repeat(2,1fr)}
@@ -238,12 +258,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--primary)}
       <button data-tab="quests" onclick="switchTab('quests')">📜 Quests</button>
       <button data-tab="domains" onclick="switchTab('domains')">🗡️ Domains</button>
       <button data-tab="achievements" onclick="switchTab('achievements')">🏆 Achievements</button>
+      <button data-tab="guide" onclick="switchTab('guide')">📖 Guide</button>
       <button data-tab="notes" onclick="switchTab('notes')">📝 Notes</button>
     </nav>
     <div id="tab-dashboard" class="tab-content"></div>
     <div id="tab-quests" class="tab-content hidden"></div>
     <div id="tab-domains" class="tab-content hidden"></div>
     <div id="tab-achievements" class="tab-content hidden"></div>
+    <div id="tab-guide" class="tab-content hidden"></div>
     <div id="tab-notes" class="tab-content hidden">
       <div class="card">
         <div class="notes-tabs" id="notes-tabs"></div>
@@ -814,7 +836,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
   document.getElementById('tab-'+tab).classList.remove('hidden');
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  if(tab==='dashboard')renderDashboard();if(tab==='achievements')renderAchievements();
+  if(tab==='dashboard')renderDashboard();if(tab==='achievements')renderAchievements();if(tab==='guide')renderGuide();
 }
 
 // ===== DASHBOARD =====
@@ -1264,6 +1286,363 @@ function drawAvatar(){
   if(lvl.lvl>=6){ctx.fillStyle='#f59e0b';ctx.fillRect(10,28,8,3)}
   ctx.fillStyle='#1e293b';ctx.fillRect(22,48,10,14);ctx.fillRect(34,48,10,14);
   ctx.fillStyle='#78350f';ctx.fillRect(20,58,12,6);ctx.fillRect(32,58,12,6);
+}
+
+// ===== GUIDE =====
+let guideTab='overview';
+function renderGuide(){
+  const el=document.getElementById('tab-guide');
+  const tabs=['overview','mental-models','traps','domain1','domain2','domain3','domain4','domain5','key-facts'];
+  const labels=['Overview','Mental Models','Traps','D1: Agentic','D2: MCP','D3: Claude Code','D4: Prompts','D5: Context','Key Facts'];
+  let h=`<div class="card"><h3 style="margin-bottom:4px">📖 CCAF Preparation Guide</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Based on <a href="https://dynamicbalaji.medium.com/claude-certified-architect-foundations-certification-preparation-guide-c70546b51f51" target="_blank" style="color:var(--accent)">Balaji Ashok Kumar's guide</a></p>
+    <div class="guide-tabs">`;
+  tabs.forEach((t,i)=>{h+=`<button class="${guideTab===t?'active':''}" onclick="guideTab='${t}';renderGuide()">${labels[i]}</button>`});
+  h+=`</div><div class="guide-content">`;
+
+  if(guideTab==='overview') h+=`
+    <h4>Estructura del Examen</h4>
+    <p>El examen se basa en <strong>5 dominios</strong> y <strong>6 contextos de escenario</strong>. Durante el examen, se seleccionan aleatoriamente 4 de los 6 escenarios y todas las preguntas se anclan a esos escenarios.</p>
+    <table><tr><th>Dominio</th><th>Peso</th></tr>
+    <tr><td>1 — Agentic Architecture & Orchestration</td><td>27%</td></tr>
+    <tr><td>2 — Tool Design & MCP Integration</td><td>18%</td></tr>
+    <tr><td>3 — Claude Code Configuration & Workflows</td><td>20%</td></tr>
+    <tr><td>4 — Prompt Engineering & Structured Output</td><td>20%</td></tr>
+    <tr><td>5 — Context Management & Reliability</td><td>15%</td></tr></table>
+    <h4>Los 6 Escenarios</h4>
+    <ul>
+    <li>Customer Support Resolution Agent</li>
+    <li>Code Generation with Claude Code</li>
+    <li>Multi-Agent Research System</li>
+    <li>Developer Productivity with Claude</li>
+    <li>Claude Code for CI/CD</li>
+    <li>Structured Data Extraction</li>
+    </ul>
+    <div class="tip">Solo 4 de los 6 escenarios aparecen en cada examen, pero estudiá los 6. Cada escenario cruza múltiples dominios.</div>
+    <h4>Passing Score</h4>
+    <p><strong>720</strong> en escala de 100–1,000. Scoring escalado que ajusta por dificultad.</p>`;
+
+  else if(guideTab==='mental-models') h+=`
+    <h4>1. Enforcement programático vs. guía por prompt</h4>
+    <p>El concepto más testeado. Cuando algo <strong>debe</strong> suceder (verificar identidad antes de reembolso, bloquear tool call arriba de un umbral) usá enforcement programático: hooks, prerequisite gates, interceptors.</p>
+    <div class="quote">"When errors have financial consequences, relying on an LLM to 'usually' follow instructions is not a valid architecture decision."</div>
+    <div class="trap">Los prompts son probabilísticos. Para workflows de compliance, una tasa de fallo no-cero es inaceptable.</div>
+
+    <h4>2. Tool descriptions son el mecanismo primario de routing</h4>
+    <p>No el system prompt. No el nombre de la función. La <strong>descripción</strong>. Cuando dos tools tienen descripciones mínimas y solapadas, el modelo adivina.</p>
+    <div class="tip">Escribí descripciones que incluyan formatos de input, queries de ejemplo, edge cases y límites explícitos entre tools similares.</div>
+
+    <h4>3. Subagentes NO heredan contexto — nunca</h4>
+    <p>En sistemas multi-agente, cada pieza de información que un subagente necesita debe pasarse explícitamente en su prompt. No hay memoria compartida ni propagación automática de historial.</p>
+
+    <h4>4. El efecto "lost in the middle" es real</h4>
+    <p>Para inputs de contexto largo, los modelos procesan confiablemente el contenido al inicio y al final, pero se pierden findings del medio.</p>
+    <div class="tip">Poné resúmenes clave al inicio de inputs agregados, usá section headers explícitos, y recortá outputs verbosos de tools.</div>
+
+    <h4>5. Batch API vs. real-time es una decisión de latencia, no de costo</h4>
+    <p>Message Batches API ahorra 50% en costos, pero la restricción real es la ventana de procesamiento de hasta 24h sin SLA garantizado.</p>
+    <div class="tip">Workflows bloqueantes → API real-time. Reportes nocturnos y auditorías semanales → batch.</div>`;
+
+  else if(guideTab==='traps') h+=`
+    <h4>Trampas Comunes en las Preguntas</h4>
+    <p>Estos son los distractores que atrapan a la gente. En cada caso, la respuesta parece razonable pero falla en la causa raíz.</p>
+
+    <div class="trap"><strong>❌ Agregar few-shot examples para forzar orden de tools</strong><br>El ordering es un concern de compliance — usá prerequisitos programáticos, no demostraciones.</div>
+
+    <div class="trap"><strong>❌ Confidence scores auto-reportados para routing de escalación</strong><br>La confianza del LLM está mal calibrada. El modelo está "confidently wrong" en los casos difíciles.</div>
+
+    <div class="trap"><strong>❌ Rutear todos los workflows a batch API por ahorro de costos</strong><br>Batch no tiene SLA. Workflows bloqueantes requieren API real-time.</div>
+
+    <div class="trap"><strong>❌ Un context window más grande arregla la dilución de atención</strong><br>Tamaño de context window ≠ calidad de atención. Dividí en passes enfocados por archivo.</div>
+
+    <div class="trap"><strong>❌ Retornar resultados vacíos ante fallo de subagente</strong><br>Suprimir errores silenciosamente impide la recuperación del coordinador. Retorná contexto de error estructurado.</div>
+
+    <div class="trap"><strong>❌ Dar a todos los agentes acceso a todos los tools</strong><br>Demasiados tools (18 vs 4-5) degrada la confiabilidad de selección. Scope tools al rol de cada agente.</div>`;
+
+  else if(guideTab==='domain1') h+=`
+    <h4>Domain 1 — Agentic Architecture & Orchestration (27%)</h4>
+
+    <h4>1.1 — Agentic Loop</h4>
+    <ul>
+    <li>Continuar loop cuando <code>stop_reason = "tool_use"</code></li>
+    <li>Terminar cuando <code>stop_reason = "end_turn"</code></li>
+    <li>Append tool results al historial entre cada iteración</li>
+    </ul>
+    <div class="trap">❌ Parsear lenguaje natural para detectar fin de loop<br>❌ Usar un cap arbitrario de iteraciones como mecanismo primario de stop<br>❌ Checkear texto del assistant como indicador de completitud</div>
+
+    <h4>1.2 — Multi-Agent Hub-and-Spoke</h4>
+    <ul>
+    <li>El coordinador maneja toda la comunicación inter-subagente, errores y routing</li>
+    <li>Subagentes tienen contexto aislado — NO heredan el historial del coordinador</li>
+    <li>Coordinador: descomponer tareas, delegar, agregar resultados, rutear errores</li>
+    <li>Usar refinamiento iterativo: evaluar síntesis → re-delegar gaps → re-sintetizar</li>
+    </ul>
+
+    <h4>1.3 — Subagent Context Passing</h4>
+    <ul>
+    <li>Task tool es el mecanismo para spawn de subagentes; <code>allowedTools</code> debe incluir "Task"</li>
+    <li>Pasar findings completos explícitamente en el prompt del subagente</li>
+    <li>Usar datos estructurados para separar contenido de metadata (URLs, números de página)</li>
+    <li>Spawn paralelo: emitir múltiples Task calls en una sola respuesta del coordinador</li>
+    <li>Usar <code>fork_session</code> para explorar enfoques divergentes desde una baseline compartida</li>
+    </ul>
+
+    <h4>1.4 — Enforcement & Handoffs</h4>
+    <ul>
+    <li>Prompt instructions tienen tasa de fallo no-cero → usar prerequisitos programáticos</li>
+    <li>Bloquear <code>process_refund</code> hasta que <code>get_customer</code> retorne un ID verificado</li>
+    <li>Handoff summary debe incluir: customer ID, root cause, monto, acción recomendada</li>
+    </ul>
+
+    <h4>1.5 — Hooks</h4>
+    <ul>
+    <li>PostToolUse hooks: normalizar formatos heterogéneos antes de que el modelo los procese</li>
+    <li>Tool call interception hooks: bloquear violaciones de policy y redirigir a escalación</li>
+    </ul>
+    <div class="tip">Hooks = garantías determinísticas. Prompts = compliance probabilístico.</div>
+
+    <h4>1.6 — Task Decomposition</h4>
+    <ul>
+    <li><strong>Prompt chaining</strong> = pasos secuenciales fijos predecibles (code reviews multi-aspecto)</li>
+    <li><strong>Dynamic decomposition</strong> = investigación open-ended (exploración de codebase legacy)</li>
+    <li>Code reviews grandes: pass por archivo + pass separado de integración cross-file</li>
+    </ul>
+
+    <h4>1.7 — Session Management</h4>
+    <ul>
+    <li><code>--resume &lt;session-name&gt;</code> continúa una sesión previa nombrada</li>
+    <li><code>fork_session</code> crea branches independientes desde una baseline</li>
+    <li>Después de editar archivos: informar explícitamente al agente de los cambios</li>
+    </ul>
+    <div class="tip">Iniciar sesión fresca con summary estructurado es más confiable que resumir cuando los tool results previos están stale.</div>`;
+
+  else if(guideTab==='domain2') h+=`
+    <h4>Domain 2 — Tool Design & MCP Integration (18%)</h4>
+
+    <h4>2.1 — Tool Description Design</h4>
+    <ul>
+    <li>Incluir: formatos de input, queries de ejemplo, edge cases, límites vs tools similares</li>
+    <li>Renombrar para eliminar overlap: <code>analyze_content</code> → <code>extract_web_results</code></li>
+    <li>Dividir tools genéricos en tools específicos por propósito</li>
+    </ul>
+    <div class="trap">❌ Wording keyword-sensitive en system prompt puede overridear incluso descripciones bien escritas</div>
+
+    <h4>2.2 — Structured Error Responses</h4>
+    <table><tr><th>Tipo de Error</th><th>Retryable</th></tr>
+    <tr><td>Transient (timeout, unavailability)</td><td>✅ true</td></tr>
+    <tr><td>Validation (invalid input)</td><td>❌ false</td></tr>
+    <tr><td>Business (policy violation)</td><td>❌ false</td></tr>
+    <tr><td>Permission</td><td>❌ false</td></tr></table>
+    <div class="trap">❌ "Operation failed" genérico impide que el agente recupere apropiadamente</div>
+    <div class="tip">Siempre distinguir entre fallo de acceso (necesita decisión de retry) y resultado vacío válido (query exitosa sin matches).</div>
+
+    <h4>2.3 — Tool Distribution & tool_choice</h4>
+    <p>Demasiados tools degrada la selección. Target: <strong>4-5 tools por agente</strong>, no 18.</p>
+    <table><tr><th>tool_choice</th><th>Comportamiento</th></tr>
+    <tr><td><code>"auto"</code></td><td>Modelo puede retornar texto en vez de llamar tool</td></tr>
+    <tr><td><code>"any"</code></td><td>Modelo debe llamar un tool, elige cuál</td></tr>
+    <tr><td><code>{"type":"tool","name":"..."}</code></td><td>Debe llamar el tool específico nombrado</td></tr></table>
+
+    <h4>2.4 — MCP Server Configuration</h4>
+    <ul>
+    <li>Project-level: <code>.mcp.json</code> — compartido via VCS, team-wide</li>
+    <li>User-level: <code>~/.claude.json</code> — personal, no compartido</li>
+    <li>Usar <code>\${GITHUB_TOKEN}</code> env var expansion — nunca commitear secrets</li>
+    <li>MCP Resources exponen catálogos de contenido para reducir tool calls exploratorios</li>
+    </ul>
+    <div class="tip">Preferir MCP servers de la comunidad sobre implementaciones custom para integraciones estándar (ej: Jira).</div>
+
+    <h4>2.5 — Built-in Tools</h4>
+    <ul>
+    <li><strong>Grep</strong> — buscar contenido en archivos (nombres de función, errores, imports)</li>
+    <li><strong>Glob</strong> — matchear paths por patrón (ej: <code>**/*.test.tsx</code>)</li>
+    <li><strong>Edit</strong> — modificaciones dirigidas usando unique text matching</li>
+    <li><strong>Read + Write</strong> — fallback cuando Edit no puede encontrar anchor text único</li>
+    </ul>
+    <div class="tip">Construir entendimiento del codebase incrementalmente: Grep entry points → Read para seguir imports. No leer todo upfront.</div>`;
+
+  else if(guideTab==='domain3') h+=`
+    <h4>Domain 3 — Claude Code Configuration & Workflows (20%)</h4>
+
+    <h4>3.1 — CLAUDE.md Hierarchy</h4>
+    <table><tr><th>Nivel</th><th>Path</th><th>Scope</th></tr>
+    <tr><td>User</td><td><code>~/.claude/CLAUDE.md</code></td><td>Solo ese usuario, NO compartido via VCS</td></tr>
+    <tr><td>Project</td><td><code>.claude/CLAUDE.md</code></td><td>Version-controlled, aplica a todo el equipo</td></tr>
+    <tr><td>Directory</td><td>Subdirectory <code>CLAUDE.md</code></td><td>Scoped a ese directorio</td></tr></table>
+    <div class="trap">❌ Poner instrucciones de equipo en config user-level — los nuevos miembros no las recibirán</div>
+    <ul>
+    <li>Usar <code>@import</code> para referenciar archivos externos y mantener CLAUDE.md modular</li>
+    <li>Usar <code>.claude/rules/</code> para archivos de reglas por tema</li>
+    <li>Usar <code>/memory</code> para verificar qué archivos están cargados</li>
+    </ul>
+
+    <h4>3.2 — Slash Commands & Skills</h4>
+    <table><tr><th>Tipo</th><th>Path</th><th>Compartido</th></tr>
+    <tr><td>Project commands</td><td><code>.claude/commands/</code></td><td>✅ via VCS</td></tr>
+    <tr><td>Personal commands</td><td><code>~/.claude/commands/</code></td><td>❌ local only</td></tr></table>
+    <p>Skills en <code>.claude/skills/SKILL.md</code> soportan frontmatter:</p>
+    <ul>
+    <li><code>context: fork</code> — corre en sub-agente aislado, no contamina la sesión principal</li>
+    <li><code>allowed-tools</code> — restringe tools disponibles durante ejecución</li>
+    <li><code>argument-hint</code> — pide parámetros requeridos al invocar sin argumentos</li>
+    </ul>
+    <div class="tip">Skills = invocación on-demand para workflows específicos. CLAUDE.md = estándares universales siempre cargados.</div>
+
+    <h4>3.3 — Path-Specific Rules</h4>
+    <p>Usar <code>.claude/rules/</code> con frontmatter YAML <code>paths</code> con glob patterns. Las reglas cargan solo al editar archivos que matchean.</p>
+    <ul>
+    <li><code>paths: ["terraform/**/*"]</code> — solo al editar Terraform</li>
+    <li><code>paths: ["**/*.test.tsx"]</code> — aplica a todos los test files</li>
+    </ul>
+
+    <h4>3.4 — Plan Mode vs Direct Execution</h4>
+    <table><tr><th>Plan Mode</th><th>Direct Execution</th></tr>
+    <tr><td>Cambios grandes multi-archivo</td><td>Cambios single-file bien acotados</td></tr>
+    <tr><td>Múltiples approaches válidos</td><td>Stack trace claro con fix obvio</td></tr>
+    <tr><td>Decisiones arquitecturales</td><td>Agregados simples (ej: validación de fecha)</td></tr></table>
+    <div class="tip">Best pattern: Plan mode para investigar → Direct execution para implementar.</div>
+
+    <h4>3.5 — Iterative Refinement</h4>
+    <ul>
+    <li>Dar 2-3 ejemplos concretos input/output cuando prosa produce resultados inconsistentes</li>
+    <li>Test-driven: escribir suite primero, compartir failures para guiar mejora</li>
+    <li>Interview pattern: pedir a Claude que surfacee consideraciones de diseño antes de implementar</li>
+    </ul>
+
+    <h4>3.6 — CI/CD Integration</h4>
+    <p>Usar flag <code>-p</code> (o <code>--print</code>) para modo no-interactivo.</p>
+    <ul>
+    <li><code>--output-format json</code> + <code>--json-schema</code> → structured findings para PR comments</li>
+    <li>Incluir findings previos en contexto → instruir a Claude a reportar solo issues nuevos</li>
+    </ul>
+    <div class="trap">❌ La misma sesión que generó el código es menos efectiva revisando sus propios cambios — usar sesión independiente.</div>`;
+
+  else if(guideTab==='domain4') h+=`
+    <h4>Domain 4 — Prompt Engineering & Structured Output (20%)</h4>
+
+    <h4>4.1 — Explicit Criteria</h4>
+    <p>Instrucciones vagas como "be conservative" NO reducen falsos positivos.</p>
+    <div class="tip">✅ "Flag comments only when the claimed behaviour directly contradicts the actual code behaviour"</div>
+    <div class="trap">❌ "Check that comments are accurate" — demasiado vago para ser accionable</div>
+    <ul>
+    <li>Categorías con alto false-positive minan la confianza en TODAS las categorías</li>
+    <li>Definir severity levels con ejemplos de código concretos para cada nivel</li>
+    </ul>
+
+    <h4>4.2 — Few-Shot Prompting</h4>
+    <p>La técnica más efectiva para output formateado y accionable consistente.</p>
+    <ul>
+    <li>2-4 ejemplos targeted para escenarios ambiguos, mostrando el razonamiento</li>
+    <li>Incluir ejemplos del formato de output deseado: location, issue, severity, suggested fix</li>
+    <li>Mostrar patrones aceptables junto a issues genuinos para reducir false positives</li>
+    </ul>
+
+    <h4>4.3 — Structured Output via tool_use</h4>
+    <p><code>tool_use</code> con JSON schemas es el approach más confiable para output schema-compliant. Elimina errores de sintaxis JSON pero <strong>NO previene errores semánticos</strong>.</p>
+    <ul>
+    <li>Campos <code>nullable</code> para info que puede no existir — previene fabricación</li>
+    <li>Valores enum <code>"unclear"</code> para casos ambiguos</li>
+    <li>Patrón <code>"other" + detail string</code> para categorización extensible</li>
+    <li><code>tool_choice: "any"</code> cuando el tipo de documento es desconocido</li>
+    </ul>
+
+    <h4>4.4 — Validation & Retry Loops</h4>
+    <p>Cuando falla validación: enviar follow-up con documento original + extracción fallida + errores específicos.</p>
+    <div class="tip">✅ Retries sirven para: format mismatches, errores estructurales de output</div>
+    <div class="trap">❌ Retries NO sirven para: información que simplemente no está en el documento fuente</div>
+
+    <h4>4.5 — Batch Processing</h4>
+    <table><tr><th>Message Batches API</th><th>Detalle</th></tr>
+    <tr><td>Ahorro</td><td>50%</td></tr>
+    <tr><td>Processing window</td><td>Hasta 24h</td></tr>
+    <tr><td>SLA</td><td>No garantizado</td></tr>
+    <tr><td>Multi-turn tool calling</td><td>No soportado en un solo request</td></tr></table>
+    <ul>
+    <li>API sincrónica → pre-merge checks, interacciones live con clientes</li>
+    <li>Batches API → reportes overnight, auditorías semanales, generación nocturna de tests</li>
+    </ul>
+
+    <h4>4.6 — Multi-Instance & Multi-Pass Review</h4>
+    <ul>
+    <li>Usar segunda instancia independiente de Claude para revisar código generado</li>
+    <li>Splitear reviews multi-archivo: passes por archivo + pass de integración cross-file</li>
+    <li>Esto evita dilución de atención y findings contradictorios</li>
+    </ul>`;
+
+  else if(guideTab==='domain5') h+=`
+    <h4>Domain 5 — Context Management & Reliability (15%)</h4>
+
+    <h4>5.1 — Long Conversation Context</h4>
+    <p>El efecto "lost in the middle" es real: modelos procesan confiablemente inicio y final, pero omiten del medio.</p>
+    <ul>
+    <li>Extraer facts transaccionales en un bloque persistente "case facts" incluido en cada prompt</li>
+    <li>Recortar outputs de tools a solo campos relevantes (40+ campos → 5 relevantes)</li>
+    <li>Poner resúmenes de findings al inicio de inputs agregados</li>
+    <li>Usar section headers explícitos</li>
+    <li>Siempre pasar historial completo de conversación en requests subsiguientes</li>
+    </ul>
+
+    <h4>5.2 — Escalation Patterns</h4>
+    <p><strong>Cuándo escalar:</strong></p>
+    <ul>
+    <li>Cliente pide explícitamente un humano → escalar inmediatamente</li>
+    <li>Policy es ambigua o silenciosa → escalar (policy gap)</li>
+    <li>Agente no puede hacer progreso significativo → escalar</li>
+    </ul>
+    <p><strong>Cuándo NO escalar inmediatamente:</strong></p>
+    <ul>
+    <li>Issue es straightforward pero cliente frustrado → acknowledge, ofrecer resolución, escalar solo si reitera</li>
+    </ul>
+    <div class="trap">❌ Escalación basada en sentimiento es unreliable<br>❌ Confidence scores auto-reportados están mal calibrados</div>
+
+    <h4>5.3 — Error Propagation in Multi-Agent Systems</h4>
+    <p>Subagentes deben retornar contexto de error estructurado: tipo de falla, qué se intentó, resultados parciales, approaches alternativos.</p>
+    <div class="trap">❌ Retornar resultados vacíos silenciosamente como éxito<br>❌ Terminar todo el workflow por fallo de un solo subagente</div>
+    <div class="tip">Subagentes implementan recovery local para fallos transient; propagan solo errores que no pueden resolver, con resultados parciales.</div>
+
+    <h4>5.4 — Large Codebase Context Management</h4>
+    <ul>
+    <li>Mantener archivos scratchpad con findings clave — referenciarlos para contrarrestar degradación</li>
+    <li>Spawn subagentes para preguntas específicas, agente principal preserva coordinación high-level</li>
+    <li>Summarizar findings antes de spawnar sub-agentes para la siguiente fase</li>
+    <li>Crash recovery: cada agente exporta estado a manifest file</li>
+    <li>Usar <code>/compact</code> para reducir uso de contexto en sesiones extendidas</li>
+    </ul>
+
+    <h4>5.5 — Human Review & Confidence Calibration</h4>
+    <ul>
+    <li>97% accuracy general puede ocultar poor performance en tipos específicos de documentos</li>
+    <li>Sampling estratificado de extracciones high-confidence</li>
+    <li>Analizar accuracy por tipo de documento Y por campo</li>
+    <li>Rutear extracciones con baja confianza a human review</li>
+    </ul>
+
+    <h4>5.6 — Information Provenance in Multi-Source Synthesis</h4>
+    <ul>
+    <li>Requerir claim-source mappings: URL, nombre de doc, excerpt, fecha</li>
+    <li>Cuando fuentes conflictan: anotar ambos valores con su atribución — nunca seleccionar uno arbitrariamente</li>
+    <li>Incluir fechas de publicación — diferencias temporales no son contradicciones</li>
+    </ul>`;
+
+  else if(guideTab==='key-facts') h+=`
+    <h4>Key Facts para Memorizar</h4>
+    <table>
+    <tr><th>Concepto</th><th>Detalle</th></tr>
+    <tr><td>Passing score</td><td><strong>720</strong> en escala 100-1,000 (scoring escalado)</td></tr>
+    <tr><td>Batch API</td><td>50% ahorro · hasta 24h · sin SLA · usar <code>custom_id</code> · sin multi-turn tool calling</td></tr>
+    <tr><td>tool_choice</td><td><code>"auto"</code> = decide modelo · <code>"any"</code> = debe llamar tool · forced = tool específico</td></tr>
+    <tr><td>stop_reason</td><td><code>"tool_use"</code> → continuar loop · <code>"end_turn"</code> → terminar</td></tr>
+    <tr><td>CLAUDE.md scope</td><td><code>~/.claude/CLAUDE.md</code> = user only · <code>.claude/CLAUDE.md</code> = project, team-wide</td></tr>
+    <tr><td>MCP config</td><td><code>.mcp.json</code> = project, VCS · <code>~/.claude.json</code> = user, personal</td></tr>
+    <tr><td>CI/CD flag</td><td><code>-p</code> / <code>--print</code> para non-interactive · <code>--output-format json</code> + <code>--json-schema</code></td></tr>
+    <tr><td>context: fork</td><td>Skill frontmatter que corre en sub-agente aislado</td></tr>
+    <tr><td>Practice test oficial</td><td>60 preguntas, mismo formato de escenarios, con explicaciones</td></tr>
+    </table>
+
+    <div class="tip" style="margin-top:16px"><strong>Tip final:</strong> Trabajá los 12 sample questions de la guía oficial del examen — leé las explicaciones de respuestas incorrectas, no solo las correctas. Completá el practice test oficial de 60 preguntas antes de rendir.</div>`;
+
+  h+=`</div></div>`;
+  el.innerHTML=h;
 }
 
 // ===== SETTINGS =====
