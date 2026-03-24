@@ -710,8 +710,7 @@ function getLevel(xp){let l=LEVELS[0];for(const v of LEVELS)if(xp>=v.xp)l=v;retu
 function getNextLevel(xp){for(const l of LEVELS)if(xp<l.xp)return l;return null}
 function recalcXP(){
   let xp=0;
-  // Quiz diagnóstico base XP
-  if(data.quizResults&&data.quizResults.score!=null)xp+=data.quizResults.score*50;
+  // Quiz diagnóstico: solo evaluación, no suma XP
   // Tareas: 50 XP cada una
   WEEKS.forEach(w=>w.tasks.forEach(t=>{if(data.tasks[t.id])xp+=50}));
   // Challenges: 200 XP cada uno
@@ -782,8 +781,8 @@ function showCharSheet(){
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-charsheet').classList.remove('hidden');
   const pct=quizState.score/20*100;
-  let startLvl=1,startXP=0;
-  if(pct>=60){startLvl=3;startXP=600}else if(pct>=40){startLvl=2;startXP=250}
+  let startLvl=1;
+  if(pct>=60)startLvl=3;else if(pct>=40)startLvl=2;
   const lvlInfo=LEVELS.find(l=>l.lvl===startLvl);
   const domResults=DOMAINS.map(d=>{const s=quizState.domainScores[d.id],p=s/4*100;return{...d,score:s,pct:p,status:p>=75?'STRONG':p>=50?'OK':'⚠️ FOCUS',color:p>=75?'var(--success)':p>=50?'var(--accent)':'var(--danger)'}});
   const sorted=[...domResults].sort((a,b)=>a.pct-b.pct);
@@ -792,13 +791,13 @@ function showCharSheet(){
     <div style="text-align:center;margin:12px 0">
       <div style="font-size:13px;color:var(--muted)">STARTING LEVEL</div>
       <div style="font-size:22px;font-weight:bold;color:var(--gold)">${startLvl} — ${lvlInfo.title}</div>
-      <div style="font-size:12px;color:var(--accent)">Starting XP: ${startXP} | Score: ${quizState.score}/20 (${pct.toFixed(0)}%)</div>
+      <div style="font-size:12px;color:var(--accent)">Score: ${quizState.score}/20 (${pct.toFixed(0)}%)</div>
     </div><hr class="char-divider"><div style="font-size:13px;font-weight:bold;margin-bottom:10px">SKILL ASSESSMENT</div>`;
   domResults.forEach(d=>{h+=`<div class="skill-row"><span class="skill-label-text">${d.icon} ${d.name.split(' ')[0]}</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:${d.pct}%;background:${d.color}"></div></div><span class="skill-pct" style="color:${d.color}">${d.pct.toFixed(0)}%</span><span style="font-size:10px;width:55px;color:${d.color}">${d.status}</span></div>`});
   h+=`<hr class="char-divider"><div style="font-size:13px;font-weight:bold;margin-bottom:8px">RECOMMENDED QUEST ORDER</div>`;
   sorted.forEach((d,i)=>{h+=`<div style="font-size:12px;margin:4px 0;color:${d.pct<50?'var(--danger)':'var(--muted)'}"> ${i+1}. ${d.name} (${d.pct.toFixed(0)}%)${d.pct<50?' ← priority':''}</div>`});
   document.getElementById('charsheet-content').innerHTML=h;
-  data.xp=startXP;data.quizResults={score:quizState.score,domainScores:{...quizState.domainScores}};save();
+  data.xp=0;data.quizResults={score:quizState.score,domainScores:{...quizState.domainScores}};save();
 }
 function beginQuest(){data.quizDone=true;save();showMain()}
 function resetQuiz(){if(!confirm('¿Repetir el diagnóstico? Tu XP y progreso se mantienen.'))return;data.quizDone=false;data.quizResults=null;save();initQuiz()}
